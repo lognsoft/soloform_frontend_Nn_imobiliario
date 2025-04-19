@@ -1,0 +1,35 @@
+# 1. Pasta de dependências instaladas pelo npm/yarn
+#    Tudo que está em node_modules é recriado a partir do package.json,
+#    portanto não devemos versionar.
+node_modules/
+
+# 2. Logs de depuração do npm ou yarn
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 3. Pasta de pacotes do JSPM (caso use)
+jspm_packages/
+
+# 4. Arquivos de lock (opcional: se sua equipe quer versionar lockfiles,
+#    comente as linhas abaixo ou remova-as)
+# package-lock.json
+# yarn.lock
+
+# 5. Pastas de build ou distribuição (dependendo da sua configuração)
+dist/
+build/
+
+# 6. Arquivos de ambiente, com variáveis sensíveis (credenciais etc.)
+.env
+.env.local
+.env.*.local
+
+# 7. Editor e sistema operacional
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 8. Cobertura de testes (se usar)
+coverage/
