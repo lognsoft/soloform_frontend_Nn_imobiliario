@@ -38,7 +38,7 @@ app.post('/enviar-grafico', async (req, res) => {
     subject: 'Resultado do Radar Chart',
     html:    '<p>Olá! Segue em anexo o gráfico de comparativo.</p>',
     attachments: [{
-      filename: 'grafico.png',
+      filename: 'grafico.jpg',
       content:  base64Data,
       encoding: 'base64'
     }]

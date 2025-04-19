@@ -161,8 +161,23 @@
     }
 
     function gerarGrafico() {
-      const ctx = document.getElementById('myChart');
-      const labelsML = perguntas.map(q => wrapLabel(q, 30));
+      const canvas = document.getElementById('myChart');
+      const ctx    = canvas.getContext('2d');
+
+      // Plugin para pintar fundo branco antes de desenhar o gráfico
+      const backgroundPlugin = {
+        id: 'custom_canvas_background_color',
+        beforeDraw(chart) {
+          const ctxBg = chart.ctx;
+          ctxBg.save();
+          ctxBg.globalCompositeOperation = 'destination-over';
+          ctxBg.fillStyle = '#ffffff';
+          ctxBg.fillRect(0, 0, chart.width, chart.height);
+          ctxBg.restore();
+        }
+      };
+
+      const labelsML     = perguntas.map(q => wrapLabel(q, 30));
       const dadosMercado = calcMediaMercado();
       const meusDados    = respostas.slice();
       const dadosIdeal   = [5,3,4,5,5,4,5,3,4,5];
@@ -227,7 +242,8 @@
               }
             }
           }
-        }
+        },
+        plugins: [backgroundPlugin]
       });
     }
 
@@ -244,7 +260,7 @@
       gerarGrafico();
 
       setTimeout(() => {
-        const canvas = document.getElementById('myChart');
+        const canvas       = document.getElementById('myChart');
         const imagemBase64 = canvas.toDataURL('image/png');
 
         fetch('http://localhost:3000/enviar-grafico', {
