@@ -34,4 +34,3 @@ coverage/
 
 # 9. Ignorar todo o diretório data (inclui mercado.json)
 data/mercado.json
-/data
