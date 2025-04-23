@@ -3,127 +3,80 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Quiz</title>
+  <title>Quiz + Radar Chart</title>
   <style>
-    body {
-      color: #ffffff;
-      background-color: #222831;
-      font-family: sans-serif;
+    body { color: #fff; background: #222; font-family: sans-serif; }
+    body > * { box-sizing: border-box; margin: 0; padding: 0; }
+    #userForm, #quiz, #loading, #successMsg, #chart-container {
+      max-width: 700px; margin: auto; padding: 1rem;
     }
-    body > * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    /* inicialmente só o userForm aparece */
+    #userForm { display: block; }
+    #quiz, #loading, #successMsg, #chart-container { display: none; }
+    #chart-container { position: relative; width: 100%; height: 80vh; }
+    #loading, #successMsg { text-align: center; }
+    #loading p { margin-bottom: .5rem; }
+    #loading progress { width: 100%; height: 16px; }
+    .option-label { display: inline-flex; align-items: center; margin: .5rem 0; cursor: pointer; }
+    .option-label input { display: none; }
+    .box-radio {
+      width: 10px; height: 8px; border: 2px solid white; border-radius: 50%; margin-right: 10px;
     }
-    #quiz, #chart-container, #emailForm {
-      max-width: 700px;
-      margin: auto;
-      padding: 1rem;
+    .option-label input:checked + .box-radio { background: #ff820d; }
+    .option-label input:checked ~ .span-text { color: #ff820d; }
+    button {
+      border: none; border-radius: 8px; background: #ff820d; color: #fff;
+      padding: 12px 20px; cursor: pointer; font-size: 14px; margin-top: 1rem;
     }
-    #chart-container {
-      position: relative;
-      width: 100%;
-      height: 80vh;
-      display: none;
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .content-input-email, #opcoes {
+      display: flex; flex-direction: column; margin-top: 1rem;
     }
-    .option-label {
-      display: inline-flex;
-      align-items: center;
-      margin: .5rem 0;
-      cursor: pointer;
-    }
-    .option-label input {
-      display: none;
-    }
-    .option-label .box-radio {
-      width: 10px;
-      height: 8px;
-      border: 2px solid white;
-      border-radius: 50%;
-      margin-right: 10px;
-    }
-    .option-label input:checked + .box-radio {
-      background-color: #ff820d;
-    }
-    .option-label input:checked ~ .span-text {
-      color: #ff820d;
-    }
-    #btnNext {
-      border-radius: 8px;
-      border: none;
-      font-size: 14px;
-      background-color: #ff820d;
-      color: #ffffff;
-      padding: 12px 20px;
-      cursor: pointer;
-      margin-top: 1rem;
-    }
-    #btnNext:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    .content-input-email {
-      display: flex;
-      margin-top: 1rem;
-    }
-    #userName {
-      flex: 1;
-      max-width: 200px;
-      margin-right: 10px;
-      border: none;
-      padding: 0 10px;
-      border-radius: 8px 0 0 8px;
-      height: 46px;
-      outline: none;
-    }
-    #userEmail {
-      flex: 2;
-      border: none;
-      padding: 0 10px;
-      border-radius: 0 8px 8px 0;
-      height: 46px;
-      outline: none;
-      margin-right: 10px;
-    }
-    #btnEnviarGrafico {
-      padding: .5rem 1rem;
-      font-size: 15px;
-      border: none;
-      background-color: #ff820d;
-      color: #ffffff;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    #opcoes {
-      display: flex !important;
-      flex-direction: column !important;
-      margin-bottom: 20px;
+    input[type="text"], input[type="email"] {
+      border: none; padding: 0 10px; height: 46px; outline: none; border-radius: 8px;
+      margin-bottom: 1rem;
     }
   </style>
 </head>
 <body>
 
+  <!-- 1) Formulário inicial de nome e e-mail -->
+  <div id="userForm">
+    <h3>Antes de começar, por favor informe:</h3>
+    <div class="content-input-email">
+      <input type="text" id="userName" placeholder="Seu nome" required />
+      <input type="email" id="userEmail" placeholder="Seu e-mail" required />
+      <button id="btnStart">Iniciar Quiz</button>
+    </div>
+  </div>
+
+  <!-- 2) Quiz -->
   <div id="quiz">
     <h2 id="pergunta"></h2>
     <div id="opcoes"></div>
     <button id="btnNext" disabled>Próxima</button>
   </div>
 
-  <div id="emailForm" style="display:none;">
-    <h3>Informe seu nome e seu e-mail para receber o resultado:</h3>
-    <div class="content-input-email">
-      <input type="text" id="userName" required placeholder="Seu nome" />
-      <input type="email" id="userEmail" required placeholder="Seu e-mail" />
-      <button id="btnEnviarGrafico">Enviar Gráfico</button>
-    </div>
+  <!-- 3) Loading -->
+  <div id="loading">
+    <p>Estamos gerando o gráfico, aguarde durante o envio do e-mail...</p>
+    <progress></progress>
   </div>
 
+  <!-- 4) Sucesso -->
+  <div id="successMsg">
+    <p>✅ Gráfico enviado com sucesso!</p>
+  </div>
+
+  <!-- 5) Container do gráfico -->
   <div id="chart-container">
     <canvas id="myChart"></canvas>
   </div>
 
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
+    // 1) Perguntas e alternativas
     const perguntas = [
       '1. Seu lançamento já tem um posicionamento estratégico bem definido?',
       '2. Você já tem um conceito criativo ou campanha pensada para o produto?',
@@ -136,90 +89,131 @@
       '9. Como está a sua preparação para criar desejo e visibilidade antes de abrir vendas?',
       '10. Qual a sua maior preocupação para o lançamento?'
     ];
-
     const alternativasPorPergunta = [
-      ['Sim, com diferenciais claros e um território de marca sólido', 'Não sei o que seria um posicionamento estratégico', 'Ainda não pensamos nisso', 'Estamos em processo de construção do posicionamento', 'Temos uma ideia, mas não formalizamos ainda'],
-      ['Sim, com diferenciais claros e um território de marca sólido', 'Sim, com identidade visual e narrativa de marca alinhadas', 'Temos uma proposta visual, mas sem estratégia por trás', 'Estamos iniciando o desenvolvimento', 'Ainda não tratamos disso'],
-      ['Sim, com canais e cronograma definidos para todas as fases', 'Temos uma ideia dos canais que usaremos', 'Estamos em fase de orçamentos e cotações', 'Ainda não começamos a planejar a mídia', 'Pretendemos resolver isso “mais perto” do lançamento'],
-      ['Sim, temos uma estratégia clara de captação de leads', 'Pensamos em fazer campanhas digitais', 'Vamos depender dos corretores ou imobiliárias', 'Ainda estamos avaliando possibilidades', 'Não sabemos exatamente como funciona isso'],
-      ['Sim, com ações pensadas para cada momento da jornada', 'Ainda estamos construindo essa régua de comunicação', 'Pretendemos focar mais no impacto inicial', 'Não estamos pensando no funil, mas apenas em “vender”', 'Não sabemos como estruturar isso'],
-      ['Sim, com book, apresentações, roteiros e apoio digital', 'Temos apenas tabela e planta', 'Estamos desenvolvendo o kit comercial ainda', 'Vamos deixar com as imobiliárias', 'Ainda não pensamos nessa etapa'],
-      ['Sim, com campanhas de incentivo, eventos e comissões agressivas', 'Vamos fazer um meeting ou evento de lançamento', 'Vamos contar com o relacionamento de praxe', 'Ainda não pensamos em ações específicas', 'Não sei se isso é relevante nessa fase'],
-      ['Sim, vamos destacar atributos como localização, conceito, diferenciais construtivos', 'Pretendemos trabalhar os benefícios, mas o preço será o foco', 'Ainda estamos formatando essa proposta de valor', 'Não pensamos nisso como prioridade', 'Acreditamos que o preço por si só venderá'],
-      ['Já estruturamos a campanha de pré-marketing e teasers', 'Vamos trabalhar redes sociais e lista de espera', 'Estamos pensando em mídia só para o lançamento', 'Ainda não definimos essa etapa', 'Não achamos necessário divulgar antes de lançar'],
-      ['Gerar leads qualificados e com potencial real de compra', 'Comunicar valor e se destacar da concorrência', 'Ter uma régua de vendas com constância', 'Engajar os corretores de forma eficiente', 'Não saber por onde começar com a comunicação']
+      ['Sim, com diferenciais claros e um território de marca sólido','Não sei o que seria um posicionamento estratégico','Ainda não pensamos nisso','Estamos em processo de construção do posicionamento','Temos uma ideia, mas não formalizamos ainda'],
+      ['Sim, com diferenciais claros e um território de marca sólido','Sim, com identidade visual e narrativa de marca alinhadas','Temos uma proposta visual, mas sem estratégia por trás','Estamos iniciando o desenvolvimento','Ainda não tratamos disso'],
+      ['Sim, com canais e cronograma definidos para todas as fases','Temos uma ideia dos canais que usaremos','Estamos em fase de orçamentos e cotações','Ainda não começamos a planejar a mídia','Pretendemos resolver isso “mais perto” do lançamento'],
+      ['Sim, temos uma estratégia clara de captação de leads','Pensamos em fazer campanhas digitais','Vamos depender dos corretores ou imobiliárias','Ainda estamos avaliando possibilidades','Não sabemos exatamente como funciona isso'],
+      ['Sim, com ações pensadas para cada momento da jornada','Ainda estamos construindo essa régua de comunicação','Pretendemos focar mais no impacto inicial','Não estamos pensando no funil, mas apenas em “vender”','Não sabemos como estruturar isso'],
+      ['Sim, com book, apresentações, roteiros e apoio digital','Temos apenas tabela e planta','Estamos desenvolvendo o kit comercial ainda','Vamos deixar com as imobiliárias','Ainda não pensamos nessa etapa'],
+      ['Sim, com campanhas de incentivo, eventos e comissões agressivas','Vamos fazer um meeting ou evento de lançamento','Vamos contar com o relacionamento de praxe','Ainda não pensamos em ações específicas','Não sei se isso é relevante nessa fase'],
+      ['Sim, vamos destacar atributos como localização, conceito, diferenciais construtivos','Pretendemos trabalhar os benefícios, mas o preço será o foco','Ainda estamos formatando essa proposta de valor','Não pensamos nisso como prioridade','Acreditamos que o preço por si só venderá'],
+      ['Já estruturamos a campanha de pré-marketing e teasers','Vamos trabalhar redes sociais e lista de espera','Estamos pensando em mídia só para o lançamento','Ainda não definimos essa etapa','Não achamos necessário divulgar antes de lançar'],
+      ['Gerar leads qualificados e com potencial real de compra','Comunicar valor e se destacar da concorrência','Ter uma régua de vendas com constância','Engajar os corretores de forma eficiente','Não saber por onde começar com a comunicação']
     ];
 
+    // Referências de DOM
+    const userForm   = document.getElementById('userForm');
+    const btnStart   = document.getElementById('btnStart');
+    const quizEl     = document.getElementById('quiz');
     const perguntaEl = document.getElementById('pergunta');
     const opcoesEl   = document.getElementById('opcoes');
     const btnNext    = document.getElementById('btnNext');
-    const quizEl     = document.getElementById('quiz');
-    const emailForm  = document.getElementById('emailForm');
+    const loadingEl  = document.getElementById('loading');
+    const successEl  = document.getElementById('successMsg');
     const chartDiv   = document.getElementById('chart-container');
-    let idxPergunta  = 0;
-    const respostas  = [];
-    let mercadoData  = null;
 
+    let nomeUsuario, emailUsuario;
+    let idxPergunta = 0;
+    const respostas = [];
+    let mercadoData = { respostasMercado: [] };
+
+    // Busca médias de mercado
+    fetch('/api/mercado')
+      .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
+      .then(d => mercadoData = d)
+      .catch(err => console.error('Erro ao obter dados de mercado:', err));
+
+    // Inicia quiz após nome e e-mail
+    btnStart.addEventListener('click', () => {
+      const nameVal  = document.getElementById('userName').value.trim();
+      const emailVal = document.getElementById('userEmail').value.trim();
+      if (!nameVal)              return alert('Digite seu nome.');
+      if (!emailVal.includes('@')) return alert('Digite um e-mail válido.');
+      nomeUsuario  = nameVal;
+      emailUsuario = emailVal;
+      userForm.style.display = 'none';
+      quizEl.style.display   = 'block';
+      renderPergunta(0);
+    });
+
+    // Renderiza pergunta i
+    function renderPergunta(i) {
+      perguntaEl.textContent = perguntas[i];
+      opcoesEl.innerHTML     = '';
+      btnNext.disabled       = true;
+      alternativasPorPergunta[i].forEach((txt, optIdx) => {
+        const label    = document.createElement('label');
+        label.className= 'option-label';
+        label.htmlFor  = `opt${i}_${optIdx}`;
+        const radio    = document.createElement('input');
+        radio.type     = 'radio'; radio.name = 'resp'; radio.value = optIdx+1; radio.id = label.htmlFor;
+        const dot      = document.createElement('span'); dot.className = 'box-radio';
+        const text     = document.createElement('span'); text.className = 'span-text';
+        text.innerHTML = `<strong>${String.fromCharCode(97+optIdx)})</strong> ${txt}`;
+        label.append(radio, dot, text);
+        opcoesEl.appendChild(label);
+      });
+    }
     opcoesEl.addEventListener('change', e => {
       if (e.target.name === 'resp') btnNext.disabled = false;
     });
 
-    function renderPergunta(i) {
-      perguntaEl.textContent = perguntas[i];
-      opcoesEl.innerHTML = '';
-      btnNext.disabled = true;
-      alternativasPorPergunta[i].forEach((txt, optIdx) => {
-        const label = document.createElement('label');
-        label.className = 'option-label';
-        label.htmlFor = `opt${i}_${optIdx}`;
-
-        const radio = document.createElement('input');
-        radio.type  = 'radio';
-        radio.name  = 'resp';
-        radio.value = optIdx + 1;
-        radio.id    = `opt${i}_${optIdx}`;
-
-        const spanDot = document.createElement('span');
-        spanDot.className = 'box-radio';
-
-        const spanText = document.createElement('span');
-        spanText.className = 'span-text';
-        spanText.innerHTML = `<strong>${String.fromCharCode(97 + optIdx)})</strong> ${txt}`;
-
-        label.append(radio, spanDot, spanText);
-        opcoesEl.appendChild(label);
-      });
-    }
-
-    btnNext.addEventListener('click', () => {
+    // Avança ou finaliza quiz
+    btnNext.addEventListener('click', async () => {
       const sel = document.querySelector('input[name="resp"]:checked');
       respostas.push(Number(sel.value));
       idxPergunta++;
       if (idxPergunta < perguntas.length) {
         renderPergunta(idxPergunta);
       } else {
-        quizEl.style.display = 'none';
-        emailForm.style.display = 'block';
+        // Esconde quiz, exibe loading
+        quizEl.style.display   = 'none';
+        loadingEl.style.display= 'block';
+        // Para gerar gráfico corretamente, precisa mostrar o container em hidden
+        chartDiv.style.visibility = 'hidden';
+        chartDiv.style.display    = 'block';
+
+        // Gera gráfico e captura base64
+        const chart = gerarGrafico();
+        const img   = chart.toBase64Image();
+
+        // Esconde o chartDiv até no fim
+        chartDiv.style.display    = 'none';
+        chartDiv.style.visibility = 'visible';
+
+        // Grava e envia
+        const grava = fetch('/api/mercado', {
+          method:'POST', headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ nome:nomeUsuario, email:emailUsuario, respostas })
+        }).catch(()=>{});
+        const payload = {
+          imagem: img,
+          emails: [emailUsuario,'brunobafilli@gmail.com'],
+          nome: nomeUsuario,
+          emailEnvio: emailUsuario,
+          perguntas, alternativasPorPergunta, respostas
+        };
+        const envia = fetch('/enviar-grafico', {
+          method:'POST', headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        }).catch(()=>{});
+        await Promise.all([grava, envia]);
+
+        // Por fim, esconde loading e mostra chart+sucesso
+        loadingEl.style.display   = 'none';
+        chartDiv.style.display    = 'block';
+        successEl.style.display   = 'block';
       }
     });
 
-    renderPergunta(0);
-
-    fetch('/api/mercado')
-      .then(res => res.json())
-      .then(data => { mercadoData = data; })
-      .catch(err => console.error('Erro ao obter dados de mercado:', err));
-
+    // Cálculo e geração do Chart.js
     function calcMediaMercado() {
-      if (!mercadoData || !mercadoData.respostasMercado.length) {
-        return Array(perguntas.length).fill(0);
-      }
-      const count = mercadoData.respostasMercado.length;
+      const arr = mercadoData.respostasMercado || [];
+      if (!arr.length) return Array(perguntas.length).fill(0);
       const soma = Array(perguntas.length).fill(0);
-      mercadoData.respostasMercado.forEach(item =>
-        item.respostas.forEach((v, i) => soma[i] += v)
-      );
-      return soma.map(s => +(s / count).toFixed(1));
+      arr.forEach(item => item.respostas.forEach((v,i) => soma[i]+=v));
+      return soma.map(s => +(s/arr.length).toFixed(1));
     }
 
     function gerarGrafico() {
@@ -230,143 +224,39 @@
           const ctx = chart.ctx;
           ctx.save();
           ctx.globalCompositeOperation = 'destination-over';
-          ctx.fillStyle = '#ffffff';
+          ctx.fillStyle = '#fff';
           ctx.fillRect(0, 0, chart.width, chart.height);
           ctx.restore();
         }
       };
-   
-      const labelsWrapped = perguntas.map(q => {
-        const words = q.split(' '), lines = [];
-        let line = '';
-        words.forEach(w => {
-          if ((line + ' ' + w).trim().length > 30) {
-            lines.push(line.trim());
-            line = w;
-          } else {
-            line = (line + ' ' + w).trim();
-          }
-        });
-        if (line) lines.push(line);
-        return lines;
-      });
-
-      new Chart(ctx, {
+      return new Chart(ctx, {
         type: 'radar',
         data: {
-          labels: labelsWrapped,
+          labels: perguntas.map(q => {
+            const words = q.split(' '), lines = [], max=30;
+            let line='';
+            words.forEach(w=>{
+              if ((line+' '+w).trim().length>max) {
+                lines.push(line.trim()); line=w;
+              } else line=(line+' '+w).trim();
+            });
+            if(line) lines.push(line);
+            return lines;
+          }),
           datasets: [
-            {
-              label: 'Média Mercado',
-              data: calcMediaMercado(),
-              backgroundColor: 'rgba(255,99,132,0.2)',
-              borderColor: 'rgba(255,99,132,1)',
-              borderWidth: 2,
-              pointBackgroundColor: 'rgba(255,99,132,1)'
-            },
-            {
-              label: 'Ideal',
-              data: [5,3,4,5,5,4,5,3,4,5],
-              backgroundColor: 'rgba(54,162,235,0.2)',
-              borderColor: 'rgba(54,162,235,1)',
-              borderWidth: 2,
-              pointBackgroundColor: 'rgba(54,162,235,1)'
-            },
-            {
-              label: 'Meus Dados',
-              data: respostas,
-              backgroundColor: 'rgba(75,192,192,0.2)',
-              borderColor: 'rgba(75,192,192,1)',
-              borderWidth: 2,
-              pointBackgroundColor: 'rgba(75,192,192,1)'
-            }
+            { label:'Média Mercado', data:calcMediaMercado(), backgroundColor:'rgba(255,99,132,0.2)', borderColor:'rgba(255,99,132,1)', borderWidth:2, pointBackgroundColor:'rgba(255,99,132,1)' },
+            { label:'Ideal',          data:[5,3,4,5,5,4,5,3,4,5], backgroundColor:'rgba(54,162,235,0.2)', borderColor:'rgba(54,162,235,1)', borderWidth:2, pointBackgroundColor:'rgba(54,162,235,1)' },
+            { label:'Meus Dados',     data:respostas, backgroundColor:'rgba(75,192,192,0.2)', borderColor:'rgba(75,192,192,1)', borderWidth:2, pointBackgroundColor:'rgba(75,192,192,1)' }
           ]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            r: {
-              min: 1,
-              max: 5,
-              ticks: { stepSize: 1 },
-              pointLabels: { font: { size: 11 }, padding: 16 },
-              angleLines: { color: '#ccc' },
-              grid: { color: '#eee' }
-            }
-          },
-          plugins: {
-            legend: { position: 'top', labels: { boxWidth: 12, padding: 16 } },
-            title: { display: true, text: 'Comparativo: Mercado × Ideal × Meus Dados', font: { size: 18 } },
-            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }
-          }
+          animation:false, responsive:true, maintainAspectRatio:false,
+          scales:{ r:{ min:1,max:5,ticks:{stepSize:1},pointLabels:{font:{size:11},padding:16},angleLines:{color:'#ccc'},grid:{color:'#eee'} }},
+          plugins:{ legend:{position:'top',labels:{boxWidth:12,padding:16}}, title:{display:true,text:'Comparativo: Mercado × Ideal × Meus Dados',font:{size:18}}, tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}`}} }
         },
-        plugins: [ bgPlugin ]
+        plugins:[bgPlugin]
       });
     }
-
-    document.getElementById('btnEnviarGrafico').addEventListener('click', () => {
-      const nomeUsuario  = document.getElementById('userName').value.trim();
-      const emailUsuario = document.getElementById('userEmail').value.trim();
-
-      if (!nomeUsuario) {
-        alert('Digite seu nome.');
-        return;
-      }
-      if (!emailUsuario.includes('@')) {
-        alert('Digite um e-mail válido.');
-        return;
-      }
-      if (!mercadoData) {
-        alert('Aguarde, carregando dados de mercado...');
-        return;
-      }
-
-      fetch('/api/mercado', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nome:       nomeUsuario,
-          email:      emailUsuario,
-          respostas
-        })
-      })
-      .then(r => r.json())
-      .then(json => {
-        if (!json.success) throw new Error(json.error || 'Erro desconhecido');
-
-        quizEl.style.display  = 'none';
-        emailForm.style.display = 'none';
-        chartDiv.style.display = 'block';
-        gerarGrafico();
-
-        setTimeout(() => {
-          const img = document.getElementById('myChart').toDataURL('image/png');
-          fetch('/enviar-grafico', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              imagem: img,
-              emails: [emailUsuario, 'brunobafilli@gmail.com']
-            })
-          })
-          .then(r => r.json())
-          .then(resp => {
-            if (resp.success) alert('O Gráfico foi enviado para seu email!');
-            else               alert('Falha no envio: ' + resp.error);
-          })
-          .catch(err => {
-            console.error(err);
-            alert('Erro ao enviar gráfico.');
-          });
-        }, 500);
-
-      })
-      .catch(err => {
-        console.error(err);
-        alert('Erro ao registrar sua resposta: ' + err.message);
-      });
-    });
   </script>
 </body>
 </html>
