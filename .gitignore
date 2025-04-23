@@ -32,6 +32,5 @@ Thumbs.db
 # 8. Cobertura de testes (se usar)
 coverage/
 
-# Ignorar somente o mercado.json
-/data
-
+# 9. Ignorar todo o diretório data (inclui mercado.json)
+data/
