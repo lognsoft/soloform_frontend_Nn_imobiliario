@@ -20,16 +20,35 @@
     button:disabled { opacity: .5; cursor: not-allowed; }
     #btnBack { margin-right: 10px; }
     .content-input-email, #opcoes { display: flex; flex-direction: column; margin-top: 1rem; }
-    input[type="text"], input[type="email"], input[type="tel"] { border: none; padding: 0 10px; height: 46px; outline: none; border-radius: 8px; margin-bottom: 1rem; }
+    input[type="text"], input[type="email"], input[type="tel"] {
+  width: 100%;
+  border: none;
+  padding: 0 10px;
+  height: 46px;
+  outline: none;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+    .error-message { color: #ff4d4f; font-size: 12px; margin-bottom: 8px; height: 14px; }
   </style>
 </head>
 <body>
   <div id="userForm">
     <h3>Antes de começar, por favor informe:</h3>
     <div class="content-input-email">
-      <input type="text" id="userName"  placeholder="Seu nome"    required />
-      <input type="email" id="userEmail" placeholder="Seu e-mail"  required />
-      <input type="tel"   id="userPhone" placeholder="(XX) XXXXX-XXXX" required />
+      <div>
+        <input type="text" id="userName"  placeholder="Seu nome" />
+        <div id="errorName" class="error-message"></div>
+      </div>
+      <div>
+        <input type="email" id="userEmail" placeholder="Seu e-mail" />
+        <div id="errorEmail" class="error-message"></div>
+      </div>
+      <div>
+        <input type="tel"   id="userPhone" placeholder="(XX) XXXXX-XXXX" />
+        <div id="errorPhone" class="error-message"></div>
+      </div>
       <button id="btnStart">Iniciar Quiz</button>
     </div>
   </div>
@@ -119,12 +138,37 @@
       .catch(() => {});
 
     btnStart.addEventListener('click', () => {
+      // limpar erros
+      document.getElementById('errorName').textContent = '';
+      document.getElementById('errorEmail').textContent = '';
+      document.getElementById('errorPhone').textContent = '';
+
       const n = document.getElementById('userName').value.trim();
       const e = document.getElementById('userEmail').value.trim();
       const t = document.getElementById('userPhone').value.trim();
-      if (!n) return alert('Digite seu nome.');
-      if (!e.includes('@')) return alert('Digite um e-mail válido.');
-      if (!t.match(/\(\d{2}\) \d{4,5}-\d{4}/)) return alert('Digite um telefone válido.');
+      let valid = true;
+
+      if (!n) {
+        document.getElementById('errorName').textContent = 'Nome obrigatório.';
+        valid = false;
+      }
+      if (!e) {
+        document.getElementById('errorEmail').textContent = 'E-mail obrigatório.';
+        valid = false;
+      } else if (!e.includes('@')) {
+        document.getElementById('errorEmail').textContent = 'Formato de e-mail inválido.';
+        valid = false;
+      }
+      if (!t) {
+        document.getElementById('errorPhone').textContent = 'Telefone obrigatório.';
+        valid = false;
+      } else if (!t.match(/\(\d{2}\) \d{4,5}-\d{4}/)) {
+        document.getElementById('errorPhone').textContent = 'Formato inválido.';
+        valid = false;
+      }
+
+      if (!valid) return;
+
       nomeUsuario     = n;
       emailUsuario    = e;
       telefoneUsuario = t;
