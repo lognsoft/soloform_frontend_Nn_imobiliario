@@ -1,4 +1,55 @@
 {
   "respostasMercado": [
+    {
+      "id": 1,
+      "nome": "teste",
+      "email": "teste@teste.com",
+      "respostas": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ]
+    },
+    {
+      "id": 2,
+      "nome": "teste",
+      "email": "teste@teste.com",
+      "respostas": [
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ]
+    },
+    {
+      "id": 3,
+      "nome": "teste",
+      "email": "teste@teste.com",
+      "respostas": [
+        4,
+        3,
+        4,
+        1,
+        3,
+        4,
+        3,
+        4,
+        3,
+        3
+      ]
+    }
   ]
 }

@@ -1,4 +1,4 @@
-// server.js
+
 const express    = require('express');
 const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
@@ -75,7 +75,7 @@ app.post('/enviar-grafico', async (req, res) => {
   } = req.body;
 
   if (typeof imagem !== 'string' || !imagem.includes('base64,')) {
-    console.error('❌ payload.imagem inválido:', imagem);
+    console.error('payload.imagem inválido:', imagem);
     return res.status(400).json({ success: false, error: 'Imagem em base64 não fornecida ou inválida.' });
   }
 
@@ -85,7 +85,7 @@ app.post('/enviar-grafico', async (req, res) => {
   try {
     imgBuffer = Buffer.from(base64Data, 'base64');
   } catch (e) {
-    console.error('❌ erro ao converter base64 em Buffer:', e);
+    console.error('erro ao converter base64 em Buffer:', e);
     return res.status(500).json({ success: false, error: 'Falha interna ao processar imagem.' });
   }
 
