@@ -1,4 +1,3 @@
-
 const express    = require('express');
 const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
@@ -6,7 +5,6 @@ const fs         = require('fs');
 const path       = require('path');
 
 const app = express();
-
 const dataPath = path.join(__dirname, 'data', 'mercado.json');
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -24,7 +22,6 @@ transporter.verify(err => {
   else      console.log(' SMTP autenticado com sucesso! ');
 });
 
-
 app.get('/api/mercado', (req, res) => {
   fs.readFile(dataPath, 'utf8', (err, content) => {
     if (err) return res.status(500).json({ error: 'Não foi possível ler dados de mercado.' });
@@ -38,9 +35,11 @@ app.get('/api/mercado', (req, res) => {
 });
 
 app.post('/api/mercado', (req, res) => {
-  const { respostas, email } = req.body;
+  const { nome, respostas, email } = req.body;
 
-
+  if (typeof nome !== 'string' || !nome.trim()) {
+    return res.status(400).json({ success: false, error: 'Nome inválido.' });
+  }
   if (!Array.isArray(respostas)) {
     return res.status(400).json({ success: false, error: 'Formato de respostas inválido.' });
   }
@@ -48,7 +47,6 @@ app.post('/api/mercado', (req, res) => {
     return res.status(400).json({ success: false, error: 'E-mail inválido.' });
   }
 
-  // lê o JSON atual
   fs.readFile(dataPath, 'utf8', (err, content) => {
     if (err) return res.status(500).json({ success: false, error: 'Erro ao ler mercado.json.' });
 
@@ -56,13 +54,14 @@ app.post('/api/mercado', (req, res) => {
     try {
       data = JSON.parse(content);
     } catch {
-      return res.status(500).json({ success: false, error: 'mercado.json com JSON inválido.' });
+      return res.status(500).json({ success: false, error: 'mercado.json inválido.' });
     }
 
     const nextId = data.respostasMercado.reduce((max, item) => Math.max(max, item.id), 0) + 1;
     data.respostasMercado.push({
-      id: nextId,
-      email,           
+      id:        nextId,
+      nome,      
+      email,
       respostas
     });
 
@@ -75,12 +74,14 @@ app.post('/api/mercado', (req, res) => {
   });
 });
 
+
 app.post('/enviar-grafico', async (req, res) => {
   const { imagem, emails } = req.body;
   const base64Data = imagem.split('base64,')[1];
+
   const mailOptions = {
-    from: 'brunobafilli@gmail.com',
-    to:   emails.join(','),
+    from:    'brunobafilli@gmail.com',
+    to:      emails.join(','),
     subject: 'Resultado do Radar Chart',
     html:    '<p>Olá! Segue em anexo o gráfico de comparativo.</p>',
     attachments: [{
@@ -98,11 +99,9 @@ app.post('/enviar-grafico', async (req, res) => {
   }
 });
 
-
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
