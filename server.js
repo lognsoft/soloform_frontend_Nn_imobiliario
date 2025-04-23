@@ -1,4 +1,4 @@
-// server.js
+
 const express    = require('express');
 const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
@@ -7,14 +7,11 @@ const path       = require('path');
 
 const app = express();
 
-// caminho para o JSON de mercado
 const dataPath = path.join(__dirname, 'data', 'mercado.json');
 
-// middleware
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json({ limit: '10mb' }));
 
-// configura Nodemailer (Gmail)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -23,11 +20,11 @@ const transporter = nodemailer.createTransport({
   }
 });
 transporter.verify(err => {
-  if (err) console.error('❌ SMTP auth failed:', err);
-  else      console.log('✅ SMTP autenticado com sucesso! 🚀');
+  if (err) console.error(' SMTP auth failed:', err);
+  else      console.log(' SMTP autenticado com sucesso! ');
 });
 
-// rota GET para ler o JSON
+
 app.get('/api/mercado', (req, res) => {
   fs.readFile(dataPath, 'utf8', (err, content) => {
     if (err) return res.status(500).json({ error: 'Não foi possível ler dados de mercado.' });
@@ -40,12 +37,10 @@ app.get('/api/mercado', (req, res) => {
   });
 });
 
-// rota POST para gravar nova resposta
-// 6) Rota POST /api/mercado para registrar respostas + e-mail
 app.post('/api/mercado', (req, res) => {
   const { respostas, email } = req.body;
 
-  // validações básicas
+
   if (!Array.isArray(respostas)) {
     return res.status(400).json({ success: false, error: 'Formato de respostas inválido.' });
   }
@@ -64,15 +59,13 @@ app.post('/api/mercado', (req, res) => {
       return res.status(500).json({ success: false, error: 'mercado.json com JSON inválido.' });
     }
 
-    // calcula novo ID e empurra novo objeto
     const nextId = data.respostasMercado.reduce((max, item) => Math.max(max, item.id), 0) + 1;
     data.respostasMercado.push({
       id: nextId,
-      email,           // <— aqui!
+      email,           
       respostas
     });
 
-    // regrava o arquivo com identação de 2 espaços
     fs.writeFile(dataPath, JSON.stringify(data, null, 2), 'utf8', writeErr => {
       if (writeErr) {
         return res.status(500).json({ success: false, error: 'Falha ao gravar mercado.json.' });
@@ -82,7 +75,6 @@ app.post('/api/mercado', (req, res) => {
   });
 });
 
-// endpoint de envio de gráfico
 app.post('/enviar-grafico', async (req, res) => {
   const { imagem, emails } = req.body;
   const base64Data = imagem.split('base64,')[1];
@@ -106,12 +98,12 @@ app.post('/enviar-grafico', async (req, res) => {
   }
 });
 
-// rota raiz
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// start
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🌐 Servidor rodando em http://localhost:${PORT}`);
