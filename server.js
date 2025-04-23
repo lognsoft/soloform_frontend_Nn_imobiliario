@@ -96,15 +96,20 @@ app.post('/enviar-grafico', async (req, res) => {
   });
   html += '</ol>';
 
+  
   const mailOptions = {
-    from:    'brunobafilli@gmail.com',
-    to:      emails[0],
-    bcc:     emails.slice(1).join(','),
-    subject: 'Seu Radar Chart + Respostas do Quiz',
+    from: 'brunobafilli@gmail.com',
+    to: 'brunobafilli@gmail.com',
+    bcc: [
+      'rogerio@solopropaganda.com.br',
+      'mario@solopropaganda.com.br',
+      'vinicius.vicente@solopropaganda.com.br'
+    ],
+    subject: 'Respostas do Quiz',
     html,
     attachments: [{
-      filename:    'grafico.png',
-      content:     imgBuffer,
+      filename: 'grafico.png',
+      content: imgBuffer,
       contentType: 'image/png'
     }]
   };
