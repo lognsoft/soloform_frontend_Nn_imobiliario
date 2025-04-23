@@ -1,6 +1,4 @@
 # 1. Pasta de dependências instaladas pelo npm/yarn
-#    Tudo que está em node_modules é recriado a partir do package.json,
-#    portanto não devemos versionar.
 node_modules/
 
 # 2. Logs de depuração do npm ou yarn
@@ -34,5 +32,5 @@ Thumbs.db
 # 8. Cobertura de testes (se usar)
 coverage/
 
-#9. Mercado.json
-data/mercado.json
+# 9. Ignorar todo o diretório data (inclui mercado.json)
+data/
