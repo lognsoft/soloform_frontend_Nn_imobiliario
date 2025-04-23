@@ -33,5 +33,5 @@ Thumbs.db
 coverage/
 
 # Ignorar somente o mercado.json
-/data/mercado.json
+/data
 

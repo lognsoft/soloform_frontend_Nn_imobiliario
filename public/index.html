@@ -40,7 +40,6 @@
 </head>
 <body>
 
-  <!-- 1) Formulário inicial de nome e e-mail -->
   <div id="userForm">
     <h3>Antes de começar, por favor informe:</h3>
     <div class="content-input-email">
@@ -50,25 +49,22 @@
     </div>
   </div>
 
-  <!-- 2) Quiz -->
   <div id="quiz">
     <h2 id="pergunta"></h2>
     <div id="opcoes"></div>
     <button id="btnNext" disabled>Próxima</button>
   </div>
 
-  <!-- 3) Loading -->
   <div id="loading">
     <p>Estamos gerando o gráfico, aguarde durante o envio do e-mail...</p>
     <progress></progress>
   </div>
 
   <!-- 4) Sucesso -->
-  <div id="successMsg">
-    <p>✅ Gráfico enviado com sucesso!</p>
-  </div>
+  <!-- <div id="successMsg">
+    <p>Gráfico enviado com sucesso!</p>
+  </div> -->
 
-  <!-- 5) Container do gráfico -->
   <div id="chart-container">
     <canvas id="myChart"></canvas>
   </div>
@@ -76,7 +72,6 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    // 1) Perguntas e alternativas
     const perguntas = [
       '1. Seu lançamento já tem um posicionamento estratégico bem definido?',
       '2. Você já tem um conceito criativo ou campanha pensada para o produto?',
@@ -102,7 +97,7 @@
       ['Gerar leads qualificados e com potencial real de compra','Comunicar valor e se destacar da concorrência','Ter uma régua de vendas com constância','Engajar os corretores de forma eficiente','Não saber por onde começar com a comunicação']
     ];
 
-    // Referências de DOM
+ 
     const userForm   = document.getElementById('userForm');
     const btnStart   = document.getElementById('btnStart');
     const quizEl     = document.getElementById('quiz');
@@ -118,13 +113,13 @@
     const respostas = [];
     let mercadoData = { respostasMercado: [] };
 
-    // Busca médias de mercado
+
     fetch('/api/mercado')
       .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
       .then(d => mercadoData = d)
       .catch(err => console.error('Erro ao obter dados de mercado:', err));
 
-    // Inicia quiz após nome e e-mail
+
     btnStart.addEventListener('click', () => {
       const nameVal  = document.getElementById('userName').value.trim();
       const emailVal = document.getElementById('userEmail').value.trim();
@@ -137,7 +132,7 @@
       renderPergunta(0);
     });
 
-    // Renderiza pergunta i
+
     function renderPergunta(i) {
       perguntaEl.textContent = perguntas[i];
       opcoesEl.innerHTML     = '';
@@ -159,7 +154,7 @@
       if (e.target.name === 'resp') btnNext.disabled = false;
     });
 
-    // Avança ou finaliza quiz
+
     btnNext.addEventListener('click', async () => {
       const sel = document.querySelector('input[name="resp"]:checked');
       respostas.push(Number(sel.value));
@@ -167,22 +162,20 @@
       if (idxPergunta < perguntas.length) {
         renderPergunta(idxPergunta);
       } else {
-        // Esconde quiz, exibe loading
+   
         quizEl.style.display   = 'none';
         loadingEl.style.display= 'block';
-        // Para gerar gráfico corretamente, precisa mostrar o container em hidden
+   
         chartDiv.style.visibility = 'hidden';
         chartDiv.style.display    = 'block';
 
-        // Gera gráfico e captura base64
+
         const chart = gerarGrafico();
         const img   = chart.toBase64Image();
 
-        // Esconde o chartDiv até no fim
         chartDiv.style.display    = 'none';
         chartDiv.style.visibility = 'visible';
 
-        // Grava e envia
         const grava = fetch('/api/mercado', {
           method:'POST', headers:{ 'Content-Type':'application/json' },
           body: JSON.stringify({ nome:nomeUsuario, email:emailUsuario, respostas })
@@ -200,14 +193,12 @@
         }).catch(()=>{});
         await Promise.all([grava, envia]);
 
-        // Por fim, esconde loading e mostra chart+sucesso
         loadingEl.style.display   = 'none';
         chartDiv.style.display    = 'block';
         successEl.style.display   = 'block';
       }
     });
 
-    // Cálculo e geração do Chart.js
     function calcMediaMercado() {
       const arr = mercadoData.respostasMercado || [];
       if (!arr.length) return Array(perguntas.length).fill(0);
@@ -245,7 +236,7 @@
           }),
           datasets: [
             { label:'Média Mercado', data:calcMediaMercado(), backgroundColor:'rgba(255,99,132,0.2)', borderColor:'rgba(255,99,132,1)', borderWidth:2, pointBackgroundColor:'rgba(255,99,132,1)' },
-            { label:'Ideal',          data:[5,3,4,5,5,4,5,3,4,5], backgroundColor:'rgba(54,162,235,0.2)', borderColor:'rgba(54,162,235,1)', borderWidth:2, pointBackgroundColor:'rgba(54,162,235,1)' },
+            { label:'Ideal',          data:[5,5,5,5,5,5,5,5,5,5], backgroundColor:'rgba(54,162,235,0.2)', borderColor:'rgba(54,162,235,1)', borderWidth:2, pointBackgroundColor:'rgba(54,162,235,1)' },
             { label:'Meus Dados',     data:respostas, backgroundColor:'rgba(75,192,192,0.2)', borderColor:'rgba(75,192,192,1)', borderWidth:2, pointBackgroundColor:'rgba(75,192,192,1)' }
           ]
         },

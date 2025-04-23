@@ -9,8 +9,7 @@ const app = express();
 const dataPath = path.join(__dirname, 'data', 'mercado.json');
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(bodyParser.json({ limit: '15mb' }));  // aumentei um pouco o limite
-
+app.use(bodyParser.json({ limit: '15mb' }));  
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -75,13 +74,11 @@ app.post('/enviar-grafico', async (req, res) => {
     respostas
   } = req.body;
 
-  // 1) Validação mínima
   if (typeof imagem !== 'string' || !imagem.includes('base64,')) {
     console.error('❌ payload.imagem inválido:', imagem);
     return res.status(400).json({ success: false, error: 'Imagem em base64 não fornecida ou inválida.' });
   }
 
-  // 2) Extrai e converte em Buffer
   const parts = imagem.split('base64,');
   const base64Data = parts[1];
   let imgBuffer;
@@ -92,7 +89,6 @@ app.post('/enviar-grafico', async (req, res) => {
     return res.status(500).json({ success: false, error: 'Falha interna ao processar imagem.' });
   }
 
-  // 3) Monta HTML do e-mail
   let html = `
     <h2>Resultado do Quiz</h2>
     <p><strong>Nome:</strong> ${nome}<br/>
@@ -114,7 +110,6 @@ app.post('/enviar-grafico', async (req, res) => {
   });
   html += `</ol>`;
 
-  // 4) Prepara mailOptions com Buffer
   const mailOptions = {
     from:    'brunobafilli@gmail.com',
     to:      emails[0],
@@ -128,7 +123,6 @@ app.post('/enviar-grafico', async (req, res) => {
     }]
   };
 
-  // 5) Envia
   try {
     await transporter.sendMail(mailOptions);
     res.json({ success: true });
