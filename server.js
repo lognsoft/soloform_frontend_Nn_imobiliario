@@ -1,4 +1,3 @@
-
 const express    = require('express');
 const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
@@ -8,8 +7,11 @@ const path       = require('path');
 const app = express();
 const dataPath = path.join(__dirname, 'data', 'mercado.json');
 
+// servir arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(bodyParser.json({ limit: '15mb' }));  
+app.use(bodyParser.json({ limit: '15mb' }));
+
+// configurar SMTP
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -18,97 +20,81 @@ const transporter = nodemailer.createTransport({
   }
 });
 transporter.verify(err => {
-  if (err) console.error('✖ SMTP auth failed:', err);
-  else      console.log('✔ SMTP autenticado com sucesso!');
+  if (err) console.error('✖ SMTP falhou:', err);
+  else     console.log('✔ SMTP autenticado com sucesso!');
 });
 
+// GET dados de mercado
 app.get('/api/mercado', (req, res) => {
   fs.readFile(dataPath, 'utf8', (err, content) => {
     if (err) return res.status(500).json({ error: 'Não foi possível ler dados de mercado.' });
     try {
-      res.json(JSON.parse(content));
+      return res.json(JSON.parse(content));
     } catch {
-      res.status(500).json({ error: 'JSON inválido em mercado.json.' });
+      return res.status(500).json({ error: 'JSON inválido em mercado.json.' });
     }
   });
 });
 
+// POST grava respostas + telefone
 app.post('/api/mercado', (req, res) => {
-  const { nome, email, respostas } = req.body;
-  if (typeof nome !== 'string' || !nome.trim()) {
-    return res.status(400).json({ success: false, error: 'Nome inválido.' });
-  }
-  if (typeof email !== 'string' || !email.includes('@')) {
-    return res.status(400).json({ success: false, error: 'E-mail inválido.' });
-  }
-  if (!Array.isArray(respostas)) {
-    return res.status(400).json({ success: false, error: 'Formato de respostas inválido.' });
+  const { nome, email, telefone, respostas } = req.body;
+  if (!nome || !email || !telefone || !Array.isArray(respostas)) {
+    return res.status(400).json({ error: 'Dados inválidos.' });
   }
 
   fs.readFile(dataPath, 'utf8', (err, content) => {
-    if (err) return res.status(500).json({ success: false, error: 'Erro ao ler mercado.json.' });
+    if (err) return res.status(500).json({ error: 'Erro ao ler mercado.json.' });
     let data;
     try { data = JSON.parse(content); }
-    catch {
-      return res.status(500).json({ success: false, error: 'JSON corrompido em mercado.json.' });
-    }
-    const nextId = data.respostasMercado.reduce((max, item) => Math.max(max, item.id), 0) + 1;
-    data.respostasMercado.push({ id: nextId, nome, email, respostas });
+    catch { return res.status(500).json({ error: 'JSON corrompido em mercado.json.' }); }
+
+    const nextId = data.respostasMercado.reduce((max, itm) => Math.max(max, itm.id), 0) + 1;
+    data.respostasMercado.push({ id: nextId, nome, email, telefone, respostas });
+
     fs.writeFile(dataPath, JSON.stringify(data, null, 2), 'utf8', writeErr => {
-      if (writeErr) {
-        return res.status(500).json({ success: false, error: 'Falha ao gravar mercado.json.' });
-      }
+      if (writeErr) return res.status(500).json({ error: 'Falha ao gravar mercado.json.' });
       res.json({ success: true, id: nextId });
     });
   });
 });
 
+// POST enviar e-mail com gráfico e telefone
 app.post('/enviar-grafico', async (req, res) => {
   const {
-    imagem,
-    emails,
-    nome,
-    emailEnvio,
-    perguntas,
-    alternativasPorPergunta,
-    respostas
+    imagem, emails,
+    nome, emailEnvio, telefone,
+    perguntas, alternativasPorPergunta, respostas
   } = req.body;
 
-  if (typeof imagem !== 'string' || !imagem.includes('base64,')) {
-    console.error('payload.imagem inválido:', imagem);
-    return res.status(400).json({ success: false, error: 'Imagem em base64 não fornecida ou inválida.' });
+  if (!imagem || !imagem.includes('base64,')) {
+    return res.status(400).json({ error: 'Imagem em base64 inválida.' });
   }
 
-  const parts = imagem.split('base64,');
-  const base64Data = parts[1];
+  // converter base64
+  const base64Data = imagem.split('base64,')[1];
   let imgBuffer;
   try {
     imgBuffer = Buffer.from(base64Data, 'base64');
-  } catch (e) {
-    console.error('erro ao converter base64 em Buffer:', e);
-    return res.status(500).json({ success: false, error: 'Falha interna ao processar imagem.' });
+  } catch {
+    return res.status(500).json({ error: 'Falha ao processar imagem.' });
   }
 
+  // montar HTML do e-mail
   let html = `
     <h2>Resultado do Quiz</h2>
     <p><strong>Nome:</strong> ${nome}<br/>
-       <strong>E-mail:</strong> ${emailEnvio}</p>
+       <strong>E-mail:</strong> ${emailEnvio}<br/>
+       <strong>Telefone:</strong> ${telefone}</p>
     <hr/>
     <h3>Respostas:</h3>
-    <ol>
-  `;
-  perguntas.forEach((pergunta, i) => {
+    <ol>`;
+  perguntas.forEach((p, i) => {
     const idx = respostas[i] - 1;
-    const texto = alternativasPorPergunta[i][idx] || '—';
-    html += `
-      <li>
-        <p><strong>${pergunta}</strong><br/>
-          ${texto}
-        </p>
-      </li>
-    `;
+    const txt = alternativasPorPergunta[i][idx] || '—';
+    html += `<li><p><strong>${p}</strong><br/>${txt}</p></li>`;
   });
-  html += `</ol>`;
+  html += '</ol>';
 
   const mailOptions = {
     from:    'brunobafilli@gmail.com',
@@ -128,10 +114,11 @@ app.post('/enviar-grafico', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('✖ erro ao enviar e-mail:', err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
+// rota principal
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

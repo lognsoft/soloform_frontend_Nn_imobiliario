@@ -11,9 +11,6 @@
     #userForm { display: block; }
     #quiz, #loading, #successMsg, #chart-container { display: none; }
     #chart-container { position: relative; width: 100%; height: 80vh; }
-    #loading, #successMsg { text-align: center; }
-    #loading p { margin-bottom: .5rem; }
-    #loading progress { width: 100%; height: 16px; }
     .option-label { display: inline-flex; align-items: center; margin: .5rem 0; cursor: pointer; }
     .option-label input { display: none; }
     .box-radio { width: 10px; height: 8px; border: 2px solid white; border-radius: 50%; margin-right: 10px; }
@@ -23,15 +20,16 @@
     button:disabled { opacity: .5; cursor: not-allowed; }
     #btnBack { margin-right: 10px; }
     .content-input-email, #opcoes { display: flex; flex-direction: column; margin-top: 1rem; }
-    input[type="text"], input[type="email"] { border: none; padding: 0 10px; height: 46px; outline: none; border-radius: 8px; margin-bottom: 1rem; }
+    input[type="text"], input[type="email"], input[type="tel"] { border: none; padding: 0 10px; height: 46px; outline: none; border-radius: 8px; margin-bottom: 1rem; }
   </style>
 </head>
 <body>
   <div id="userForm">
     <h3>Antes de começar, por favor informe:</h3>
     <div class="content-input-email">
-      <input type="text" id="userName" placeholder="Seu nome" required />
-      <input type="email" id="userEmail" placeholder="Seu e-mail" required />
+      <input type="text" id="userName"  placeholder="Seu nome"    required />
+      <input type="email" id="userEmail" placeholder="Seu e-mail"  required />
+      <input type="tel"   id="userPhone" placeholder="(XX) XXXXX-XXXX" required />
       <button id="btnStart">Iniciar Quiz</button>
     </div>
   </div>
@@ -60,6 +58,19 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
+    // Máscara para telefone
+    const phoneInput = document.getElementById('userPhone');
+    phoneInput.addEventListener('input', e => {
+      let v = e.target.value.replace(/\D/g, '');
+      if (v.length > 11) v = v.slice(0, 11);
+      if (v.length > 6) {
+        v = v.replace(/^(\d{2})(\d{5})(\d{0,4}).*/, '($1) $2-$3');
+      } else if (v.length > 2) {
+        v = v.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+      }
+      e.target.value = v;
+    });
+
     const perguntas = [
       '1. Seu lançamento já tem um posicionamento estratégico bem definido?',
       '2. Você já tem um conceito criativo ou campanha pensada para o produto?',
@@ -74,30 +85,30 @@
     ];
 
     const alternativasPorPergunta = [
-      ['Sim, com diferenciais claros e um território de marca sólido', 'Não sei o que seria um posicionamento estratégico', 'Ainda não pensamos nisso', 'Estamos em processo de construção do posicionamento', 'Temos uma ideia, mas não formalizamos ainda'],
-      ['Sim, com diferenciais claros e um território de marca sólido', 'Sim, com identidade visual e narrativa de marca alinhadas', 'Temos uma proposta visual, mas sem estratégia por trás', 'Estamos iniciando o desenvolvimento', 'Ainda não tratamos disso'],
-      ['Sim, com canais e cronograma definidos para todas as fases', 'Temos uma ideia dos canais que usaremos', 'Estamos em fase de orçamentos e cotações', 'Ainda não começamos a planejar a mídia', 'Pretendemos resolver isso “mais perto” do lançamento'],
-      ['Sim, temos uma estratégia clara de captação de leads', 'Pensamos em fazer campanhas digitais', 'Vamos depender dos corretores ou imobiliárias', 'Ainda estamos avaliando possibilidades', 'Não sabemos exatamente como funciona isso'],
-      ['Sim, com ações pensadas para cada momento da jornada', 'Ainda estamos construindo essa régua de comunicação', 'Pretendemos focar mais no impacto inicial', 'Não estamos pensando no funil, mas apenas em “vender”', 'Não sabemos como estruturar isso'],
-      ['Sim, com book, apresentações, roteiros e apoio digital', 'Temos apenas tabela e planta', 'Estamos desenvolvendo o kit comercial ainda', 'Vamos deixar com as imobiliárias', 'Ainda não pensamos nessa etapa'],
-      ['Sim, com campanhas de incentivo, eventos e comissões agressivas', 'Vamos fazer um meeting ou evento de lançamento', 'Vamos contar com o relacionamento de praxe', 'Ainda não pensamos em ações específicas', 'Não sei se isso é relevante nessa fase'],
-      ['Sim, vamos destacar atributos como localização, conceito, diferenciais construtivos', 'Pretendemos trabalhar os benefícios, mas o preço será o foco', 'Ainda estamos formatando essa proposta de valor', 'Não pensamos nisso como prioridade', 'Acreditamos que o preço por si só venderá'],
-      ['Já estruturamos a campanha de pré-marketing e teasers', 'Vamos trabalhar redes sociais e lista de espera', 'Estamos pensando em mídia só para o lançamento', 'Ainda não definimos essa etapa', 'Não achamos necessário divulgar antes de lançar'],
-      ['Gerar leads qualificados e com potencial real de compra', 'Comunicar valor e se destacar da concorrência', 'Ter uma régua de vendas com constância', 'Engajar os corretores de forma eficiente', 'Não saber por onde começar com a comunicação']
+      ['Sim, com diferenciais claros e um território de marca sólido','Não sei o que seria um posicionamento estratégico','Ainda não pensamos nisso','Estamos em processo de construção do posicionamento','Temos uma ideia, mas não formalizamos ainda'],
+      ['Sim, com identidade visual e narrativa de marca alinhadas','Temos uma proposta visual, mas sem estratégia por trás','Estamos iniciando o desenvolvimento','Ainda não tratamos disso','Outra opção'],
+      ['Sim, com canais e cronograma definidos para todas as fases','Temos uma ideia dos canais que usaremos','Estamos em fase de orçamentos e cotações','Ainda não começamos a planejar a mídia','Pretendemos resolver isso “mais perto” do lançamento'],
+      ['Sim, temos uma estratégia clara de captação de leads','Pensamos em fazer campanhas digitais','Vamos depender dos corretores ou imobiliárias','Ainda estamos avaliando possibilidades','Não sabemos exatamente como funciona isso'],
+      ['Sim, com ações pensadas para cada momento da jornada','Ainda estamos construindo essa régua de comunicação','Pretendemos focar mais no impacto inicial','Não estamos pensando no funil, mas apenas em “vender”','Não sabemos como estruturar isso'],
+      ['Sim, com book, apresentações, roteiros e apoio digital','Temos apenas tabela e planta','Estamos desenvolvendo o kit comercial ainda','Vamos deixar com as imobiliárias','Ainda não pensamos nessa etapa'],
+      ['Sim, com campanhas de incentivo, eventos e comissões agressivas','Vamos fazer um meeting ou evento de lançamento','Vamos contar com o relacionamento de praxe','Ainda não pensamos em ações específicas','Não sei se isso é relevante nessa fase'],
+      ['Sim, vamos destacar atributos como localização, conceito, diferenciais construtivos','Pretendemos trabalhar os benefícios, mas o preço será o foco','Ainda estamos formatando essa proposta de valor','Não pensamos nisso como prioridade','Acreditamos que o preço por si só venderá'],
+      ['Já estruturamos a campanha de pré-marketing e teasers','Vamos trabalhar redes sociais e lista de espera','Estamos pensando em mídia só para o lançamento','Ainda não definimos essa etapa','Não achamos necessário divulgar antes de lançar'],
+      ['Gerar leads qualificados e com potencial real de compra','Comunicar valor e se destacar da concorrência','Ter uma régua de vendas com constância','Engajar os corretores de forma eficiente','Não saber por onde começar com a comunicação']
     ];
 
-    const userForm = document.getElementById('userForm');
-    const btnStart = document.getElementById('btnStart');
-    const quizEl = document.getElementById('quiz');
+    const userForm   = document.getElementById('userForm');
+    const quizEl     = document.getElementById('quiz');
+    const loadingEl  = document.getElementById('loading');
+    const successEl  = document.getElementById('successMsg');
+    const chartDiv   = document.getElementById('chart-container');
+    const btnStart   = document.getElementById('btnStart');
+    const btnNext    = document.getElementById('btnNext');
+    const btnBack    = document.getElementById('btnBack');
     const perguntaEl = document.getElementById('pergunta');
-    const opcoesEl = document.getElementById('opcoes');
-    const btnNext = document.getElementById('btnNext');
-    const btnBack = document.getElementById('btnBack');
-    const loadingEl = document.getElementById('loading');
-    const successEl = document.getElementById('successMsg');
-    const chartDiv = document.getElementById('chart-container');
+    const opcoesEl   = document.getElementById('opcoes');
 
-    let nomeUsuario, emailUsuario;
+    let nomeUsuario, emailUsuario, telefoneUsuario;
     let idxPergunta = 0;
     const respostas = [];
     let mercadoData = { respostasMercado: [] };
@@ -108,14 +119,17 @@
       .catch(() => {});
 
     btnStart.addEventListener('click', () => {
-      const nameVal = document.getElementById('userName').value.trim();
-      const emailVal = document.getElementById('userEmail').value.trim();
-      if (!nameVal) return alert('Digite seu nome.');
-      if (!emailVal.includes('@')) return alert('Digite um e-mail válido.');
-      nomeUsuario = nameVal;
-      emailUsuario = emailVal;
-      userForm.style.display = 'none';
-      quizEl.style.display = 'block';
+      const n = document.getElementById('userName').value.trim();
+      const e = document.getElementById('userEmail').value.trim();
+      const t = document.getElementById('userPhone').value.trim();
+      if (!n) return alert('Digite seu nome.');
+      if (!e.includes('@')) return alert('Digite um e-mail válido.');
+      if (!t.match(/\(\d{2}\) \d{4,5}-\d{4}/)) return alert('Digite um telefone válido.');
+      nomeUsuario     = n;
+      emailUsuario    = e;
+      telefoneUsuario = t;
+      userForm.style.display   = 'none';
+      quizEl.style.display     = 'block';
       renderPergunta(0);
     });
 
@@ -124,47 +138,58 @@
     });
 
     btnNext.addEventListener('click', async () => {
-      const sel = document.querySelector('input[name="resp"]:checked');
-      respostas[idxPergunta] = Number(sel.value);
+      respostas[idxPergunta] = Number(
+        document.querySelector('input[name="resp"]:checked').value
+      );
       idxPergunta++;
+
       if (idxPergunta < perguntas.length) {
         renderPergunta(idxPergunta);
       } else {
-        quizEl.style.display = 'none';
+        quizEl.style.display    = 'none';
+        successEl.style.display = 'none';
         loadingEl.style.display = 'block';
+        chartDiv.style.display  = 'block';
         chartDiv.style.visibility = 'hidden';
-        chartDiv.style.display = 'block';
+
+        await new Promise(r => setTimeout(r, 50));
 
         const chart = gerarGrafico();
-        const img = chart.toBase64Image();
+        const img   = chart.toBase64Image();
 
-        chartDiv.style.display = 'none';
-        chartDiv.style.visibility = 'visible';
+        try {
+          const resApi = await fetch('/api/mercado', {
+            method: 'POST', headers: { 'Content-Type':'application/json' },
+            body: JSON.stringify({ nome:nomeUsuario, email:emailUsuario, telefone:telefoneUsuario, respostas })
+          });
+          if (!resApi.ok) console.error('Erro API mercado:', resApi.statusText);
 
-        await Promise.all([
-          fetch('/api/mercado', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nome: nomeUsuario, email: emailUsuario, respostas })
-          }).catch(() => {}),
-          fetch('/enviar-grafico', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+          const resEmail = await fetch('/enviar-grafico', {
+            method:'POST', headers:{ 'Content-Type':'application/json' },
             body: JSON.stringify({
               imagem: img,
-              emails: [emailUsuario, 'brunobafilli@gmail.com'],
+              emails: [emailUsuario,'brunobafilli@gmail.com'],
               nome: nomeUsuario,
               emailEnvio: emailUsuario,
+              telefone: telefoneUsuario,
               perguntas,
               alternativasPorPergunta,
               respostas
             })
-          }).catch(() => {})
-        ]);
+          });
+          if (!resEmail.ok) {
+            const err = await resEmail.json();
+            console.error('Erro enviar gráfico:', err);
+            alert('Falha ao enviar e-mail: ' + err.error);
+          }
+        } catch (error) {
+          console.error('Erro na requisição:', error);
+          alert('Erro de rede ao enviar e-mail.');
+        }
 
-        loadingEl.style.display = 'none';
-        chartDiv.style.display = 'block';
-        successEl.style.display = 'block';
+        loadingEl.style.display  = 'none';
+        chartDiv.style.visibility = 'visible';
+        successEl.style.display  = 'block';
       }
     });
 
@@ -174,117 +199,38 @@
         respostas.pop();
         renderPergunta(idxPergunta);
       } else {
-        quizEl.style.display = 'none';
-        userForm.style.display = 'block';
+        quizEl.style.display    = 'none';
+        userForm.style.display  = 'block';
       }
     });
 
     function renderPergunta(i) {
       perguntaEl.textContent = perguntas[i];
-      opcoesEl.innerHTML = '';
-      btnNext.disabled = true;
-
-      alternativasPorPergunta[i].forEach((txt, optIdx) => {
-        const label = document.createElement('label');
-        label.className = 'option-label';
-        label.htmlFor = `opt${i}_${optIdx}`;
-
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'resp';
-        radio.value = optIdx + 1;
-        radio.id = label.htmlFor;
-
-        const dot = document.createElement('span');
-        dot.className = 'box-radio';
-
-        const text = document.createElement('span');
-        text.className = 'span-text';
-        text.innerHTML = `<strong>${String.fromCharCode(97 + optIdx)})</strong> ${txt}`;
-
-        label.append(radio, dot, text);
-        opcoesEl.appendChild(label);
+      opcoesEl.innerHTML     = '';
+      btnNext.disabled       = true;
+      alternativasPorPergunta[i].forEach((txt,optIdx) => {
+        const label = document.createElement('label'); label.className='option-label'; label.htmlFor=`opt${i}_${optIdx}`;
+        const radio = document.createElement('input'); radio.type='radio'; radio.name='resp'; radio.value=optIdx+1; radio.id=label.htmlFor;
+        const dot   = document.createElement('span'); dot.className='box-radio';
+        const span  = document.createElement('span'); span.className='span-text'; span.innerHTML=`<strong>${String.fromCharCode(97+optIdx)})</strong> ${txt}`;
+        label.append(radio,dot,span); opcoesEl.appendChild(label);
       });
-
-      if (respostas[i] != null) {
-        const prev = respostas[i] - 1;
-        const input = document.getElementById(`opt${i}_${prev}`);
-        if (input) {
-          input.checked = true;
-          btnNext.disabled = false;
-        }
-      }
-
-      btnBack.style.display = 'inline-block';
+      if(respostas[i]!=null){ const prev=respostas[i]-1; const inp=document.getElementById(`opt${i}_${prev}`); if(inp){inp.checked=true; btnNext.disabled=false;} }
+      btnBack.style.display='inline-block';
     }
 
     function calcMediaMercado() {
-      const arr = mercadoData.respostasMercado || [];
-      if (!arr.length) return Array(perguntas.length).fill(0);
-      const soma = Array(perguntas.length).fill(0);
-      arr.forEach(item => item.respostas.forEach((v, idx) => soma[idx] += v));
-      return soma.map(s => +(s / arr.length).toFixed(1));
+      const arr=mercadoData.respostasMercado||[];
+      if(!arr.length) return Array(perguntas.length).fill(0);
+      const soma=Array(perguntas.length).fill(0);
+      arr.forEach(it=>it.respostas.forEach((v,k)=>soma[k]+=v));
+      return soma.map(s=>(s/arr.length).toFixed(1));
     }
 
     function gerarGrafico() {
-      const ctx = document.getElementById('myChart').getContext('2d');
-      const bgPlugin = {
-        id: 'bg_white',
-        beforeDraw(chart) {
-          const ctx = chart.ctx;
-          ctx.save();
-          ctx.globalCompositeOperation = 'destination-over';
-          ctx.fillStyle = '#fff';
-          ctx.fillRect(0, 0, chart.width, chart.height);
-          ctx.restore();
-        }
-      };
-
-      return new Chart(ctx, {
-        type: 'radar',
-        data: {
-          labels: perguntas.map(q => {
-            const words = q.split(' '), lines = [], max = 30;
-            let line = '';
-            words.forEach(w => {
-              if ((line + ' ' + w).trim().length > max) {
-                lines.push(line.trim());
-                line = w;
-              } else {
-                line = (line + ' ' + w).trim();
-              }
-            });
-            if (line) lines.push(line);
-            return lines;
-          }),
-          datasets: [
-            { label: 'Média Mercado', data: calcMediaMercado(), backgroundColor: 'rgba(255,99,132,0.2)', borderColor: 'rgba(255,99,132,1)', borderWidth: 2, pointBackgroundColor: 'rgba(255,99,132,1)' },
-            { label: 'Ideal', data: Array(perguntas.length).fill(5), backgroundColor: 'rgba(54,162,235,0.2)', borderColor: 'rgba(54,162,235,1)', borderWidth: 2, pointBackgroundColor: 'rgba(54,162,235,1)' },
-            { label: 'Meus Dados', data: respostas, backgroundColor: 'rgba(75,192,192,0.2)', borderColor: 'rgba(75,192,192,1)', borderWidth: 2, pointBackgroundColor: 'rgba(75,192,192,1)' }
-          ]
-        },
-        options: {
-          animation: false,
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            r: {
-              min: 1,
-              max: 5,
-              ticks: { stepSize: 1 },
-              pointLabels: { font: { size: 11 }, padding: 16 },
-              angleLines: { color: '#ccc' },
-              grid: { color: '#eee' }
-            }
-          },
-          plugins: {
-            legend: { position: 'top', labels: { boxWidth: 12, padding: 16 } },
-            title: { display: true, text: 'Comparativo: Mercado × Ideal × Meus Dados', font: { size: 18 } },
-            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }
-          }
-        },
-        plugins: [bgPlugin]
-      });
+      const ctx=document.getElementById('myChart').getContext('2d');
+      const bg={ id:'bg_white', beforeDraw(ch){ const c=ch.ctx; c.save(); c.globalCompositeOperation='destination-over'; c.fillStyle='#fff'; c.fillRect(0,0,ch.width,ch.height); c.restore(); }};
+      return new Chart(ctx,{ type:'radar', data:{ labels:perguntas.map(q=>{ const ws=q.split(' '),ls=[],m=30;let ln=''; ws.forEach(w=>{ if((ln+' '+w).trim().length>m){ ls.push(ln.trim()); ln=w;}else ln=(ln+' '+w).trim(); }); if(ln) ls.push(ln); return ls;}), datasets:[ { label:'Média Mercado', data:calcMediaMercado(), backgroundColor:'rgba(255,99,132,0.2)', borderColor:'rgba(255,99,132,1)', borderWidth:2, pointBackgroundColor:'rgba(255,99,132,1)' }, { label:'Ideal', data:Array(perguntas.length).fill(5), backgroundColor:'rgba(54,162,235,0.2)', borderColor:'rgba(54,162,235,1)', borderWidth:2, pointBackgroundColor:'rgba(54,162,235,1)' }, { label:'Meus Dados', data:respostas, backgroundColor:'rgba(75,192,192,0.2)', borderColor:'rgba(75,192,192,1)', borderWidth:2, pointBackgroundColor:'rgba(75,192,192,1)' } ] }, options:{ animation:false,responsive:true,maintainAspectRatio:false, scales:{ r:{ min:1,max:5,ticks:{stepSize:1},pointLabels:{font:{size:11},padding:16},angleLines:{color:'#ccc'},grid:{color:'#eee'} } }, plugins:{ legend:{position:'top',labels:{boxWidth:12,padding:16}}, title:{display:true,text:'Comparativo: Mercado × Ideal × Meus Dados',font:{size:18}}, tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw}`}} } }, plugins:[bg] });
     }
   </script>
 </body>
