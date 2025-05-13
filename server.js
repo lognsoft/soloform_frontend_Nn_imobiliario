@@ -73,11 +73,13 @@ app.post('/submit-quiz', (req, res) => {
   if (!nome || !email || !telefone || !Array.isArray(respostas)) {
     return res.status(400).json({ error: 'Dados inválidos.' });
   }
+
   fs.readFile(dataPath, 'utf8', (err, content) => {
     if (err) return res.status(500).json({ error: 'Erro ao ler dados.' });
     let data;
     try { data = JSON.parse(content); }
     catch { return res.status(500).json({ error: 'JSON corrompido.' }); }
+
     const nextId = data.respostasMercado.reduce((m, x) => Math.max(m, x.id), 0) + 1;
     data.respostasMercado.push({
       id: nextId,
@@ -88,21 +90,136 @@ app.post('/submit-quiz', (req, res) => {
       createdAt: new Date().toISOString(),
       checked: false
     });
+
     fs.writeFile(dataPath, JSON.stringify(data, null, 2), 'utf8', writeErr => {
       if (writeErr) return res.status(500).json({ error: 'Falha ao gravar.' });
+
       const link = `${req.protocol}://${req.get('host')}/result/${nextId}`;
+
+      // 1) E-mail para o Bruno (com perguntas e respostas completas)
       transporter.sendMail({
         from: 'brunobafilli@gmail.com',
-        to: email,
-        subject: 'Seu resultado do Quiz',
-        html: `<h2>Olá ${nome},</h2><p>Seu quiz foi recebido!<br/> Em breve entraremos em contato!</p>`
-      }, errMail => {
-        if (errMail) return res.status(500).json({ error: 'Falha ao enviar e-mail.' });
-        res.json({ success: true, link });
+        to: 'brunobafilli@gmail.com',
+        subject: `Novo envio de Quiz (#${nextId})`,
+        html: `
+          <h2>Novo envio de questionário imobiliário (#${nextId})</h2>
+          <p><strong>Nome:</strong> ${nome}</p>
+          <p><strong>E-mail:</strong> ${email}</p>
+          <p><strong>Telefone:</strong> ${telefone}</p>
+          <h3>Perguntas e Respostas:</h3>
+          <ul>
+            ${
+              perguntas.map((p, i) => `
+                <li>
+                  <strong>${p.replace(/^\d+\.\\s*/, '')}</strong><br/>
+                  Resposta: ${respostas[i]}
+                </li>
+              `).join('')
+            }
+          </ul>
+          <p>
+            <strong>Link para visualizar gráfico e detalhes:</strong><br/>
+            <a href="${link}">${link}</a>
+          </p>
+        `
+      }, errBruno => {
+        if (errBruno) {
+          console.error('Erro enviando e-mail para Bruno:', errBruno);
+          return res.status(500).json({ error: 'Falha ao enviar e-mail interno.' });
+        }
+
+        // 2) E-mail de agradecimento ao cliente
+        transporter.sendMail({
+          from: 'brunobafilli@gmail.com',
+          to: email,
+          subject: 'Obrigado pelo seu envio!',
+          html: `
+          <!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Confirmação de Recebimento</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+  <table
+    align="center"
+    width="100%"
+    cellpadding="0"
+    cellspacing="0"
+    style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; font-family: Arial, sans-serif;"
+  >
+    <!-- Header -->
+    <tr>
+      <td style="background-color: #ff820d; padding: 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Obrigado pelo contato!</h1>
+      </td>
+    </tr>
+
+    <!-- Body -->
+    <tr>
+      <td style="padding: 30px 20px; color: #333333;">
+        <h2 style="margin-top: 0; font-size: 20px;">Olá ${nome},</h2>
+        <p style="font-size: 16px; line-height: 1.5;">
+          Seu email foi recebido com sucesso. Nossa equipe já está analisando sua mensagem
+          e em breve retornaremos com mais informações.
+        </p>
+
+        <!-- Call-to-Action -->
+        <p style="text-align: center; margin: 30px 0;">
+          <a
+            href="https://www.solopropaganda.com.br"
+            style="display: inline-block; background-color: #ff820d; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-size: 16px;"
+          >
+            Acesse nosso site
+          </a>
+        </p>
+
+        <p style="font-size: 14px; color: #777777;">
+          Somos especialistas em saúde e bem-estar, combinando criatividade e dados para acelerar o crescimento de marcas e negócios.
+        </p>
+      </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+      <td style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 14px; color: #777777;">
+        <p style="margin: 0; font-weight: bold; color: #333333;">SOLO PROPAGANDA</p>
+        <p style="margin: 4px 0;">Wellness Ads Agency</p>
+        <p style="margin: 4px 0;">
+          Av. Cel. Silva Telles, 1002 | Conj 52, Campinas – SP
+        </p>
+        <p style="margin: 4px 0;">
+          Tel: +55 (19) 3255 1929 |
+          E-mail:
+          <a href="mailto:hello@solopropaganda.com.br" style="color: #0071BC; text-decoration: none;">
+            hello@solopropaganda.com.br
+          </a>
+        </p>
+        <p style="margin: 12px 0 0 0; font-size: 12px; color: #999999;">
+          ©2025 SOLO. Wellness Ads Agency. Todos os direitos reservados.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+          `
+        }, errCliente => {
+          if (errCliente) {
+            console.error('Erro enviando e-mail ao cliente:', errCliente);
+            return res.status(500).json({ error: 'Falha ao enviar confirmação ao cliente.' });
+          }
+
+          res.json({ success: true, link });
+        });
       });
+
     });
   });
 });
+
+
 
 // GET /result/:id
 app.get('/result/:id', checkAuth, (req, res) => {
@@ -222,9 +339,11 @@ res.send(`
       <ol style="padding-left:15px">
         ${
           perguntas.map((p, i) => `
-            <li style="padding-bottom: 10px">
+            <li style="padding-bottom: 10px; list-style: none;">
               <strong>${p.replace(/^\d+\.\\s*/, '')}</strong><br/>
               ${respostasTexto[i]}
+
+              <hr>
             </li>
           `).join('')
         }
@@ -432,8 +551,6 @@ res.send(`
 </body>
 </html>
 `);
-
-
 });
 
 // POST /result/:id/check
@@ -456,7 +573,7 @@ app.post('/result/:id/check', checkAuth, (req, res) => {
 });
 
 // POST /reply/:id
-app.post('/reply/:id', checkAuth, (req, res) => {
+app.post('/reply/:id', (req, res) => {
   const id = Number(req.params.id);
   const { reply, jpg, pdf } = req.body;
   const data = JSON.parse(fs.readFileSync(dataPath,'utf8'));
