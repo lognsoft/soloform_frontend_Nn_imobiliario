@@ -7,29 +7,16 @@
   <style>
     body { color: #fff; background: #222; font-family: sans-serif; }
     body > * { box-sizing: border-box; margin: 0; padding: 0; }
-    #userForm, #quiz, #loading, #successMsg, #chart-container { max-width: 700px; margin: auto; padding: 1rem; }
+    #userForm, #quiz, #loading, #successMsg { max-width: 700px; margin: auto; padding: 1rem; }
     #userForm { display: block; }
-    #quiz, #loading, #successMsg, #chart-container { display: none; }
-    #chart-container { position: relative; width: 100%; height: 80vh; }
-    .option-label { display: inline-flex; align-items: center; margin: .5rem 0; cursor: pointer; }
-    .option-label input { display: none; }
-    .box-radio { width: 10px; height: 8px; border: 2px solid white; border-radius: 50%; margin-right: 10px; }
-    .option-label input:checked + .box-radio { background: #ff820d; }
-    .option-label input:checked ~ .span-text { color: #ff820d; }
+    #quiz, #loading, #successMsg { display: none; }
     button { border: none; border-radius: 8px; background: #ff820d; color: #fff; padding: 12px 20px; cursor: pointer; font-size: 14px; margin-top: 1rem; }
     button:disabled { opacity: .5; cursor: not-allowed; }
-    #btnBack { margin-right: 10px; }
-    .content-input-email, #opcoes { display: flex; flex-direction: column; margin-top: 1rem; }
-    input[type="text"], input[type="email"], input[type="tel"] {
-      width: 100%;
-      border: none;
-      padding: 0 10px;
-      height: 46px;
-      outline: none;
-      border-radius: 8px;
-      margin-bottom: 4px;
-    }
+    .content-input-email { display: flex; flex-direction: column; margin-top: 1rem; }
+    input { width: 100%; border: none; padding: 0 10px; height: 46px; outline: none; border-radius: 8px; margin-bottom: 4px; }
     .error-message { color: #ff4d4f; font-size: 12px; margin-bottom: 8px; height: 14px; }
+    .option-label { display: block; margin: .5rem 0; cursor: pointer; }
+    .option-label input { margin-right: 8px; }
   </style>
 </head>
 <body>
@@ -62,33 +49,25 @@
   </div>
 
   <div id="loading">
-    <p>Obrigado pelo envio. Em breve nossos especialistas entrarão em contato.</p>
-    <!-- <progress></progress> -->
+    <p>Enviando suas respostas...</p>
   </div>
 
   <div id="successMsg">
-    <p>Obrigado pelo envio. Em breve nossos especialistas entrarão em contato.</p>
+    <p>Tudo certo! Verifique seu e-mail para acessar o gráfico.</p>
   </div>
 
-  <div id="chart-container">
-    <canvas id="myChart"></canvas>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     // Máscara para telefone
     const phoneInput = document.getElementById('userPhone');
     phoneInput.addEventListener('input', e => {
       let v = e.target.value.replace(/\D/g, '');
       if (v.length > 11) v = v.slice(0, 11);
-      if (v.length > 6) {
-        v = v.replace(/^(\d{2})(\d{5})(\d{0,4}).*/, '($1) $2-$3');
-      } else if (v.length > 2) {
-        v = v.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
-      }
+      if (v.length > 6) v = v.replace(/^(\d{2})(\d{5})(\d{0,4}).*/, '($1) $2-$3');
+      else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
       e.target.value = v;
     });
 
+    // Perguntas e alternativas
     const perguntas = [
       '1. Seu lançamento já tem um posicionamento estratégico bem definido?',
       '2. Você já tem um conceito criativo ou campanha pensada para o produto?',
@@ -101,7 +80,6 @@
       '9. Como está a sua preparação para criar desejo e visibilidade antes de abrir vendas?',
       '10. Qual a sua maior preocupação para o lançamento?'
     ];
-
     const alternativasPorPergunta = [
       ['Sim, com diferenciais claros e um território de marca sólido','Não sei o que seria um posicionamento estratégico','Ainda não pensamos nisso','Estamos em processo de construção do posicionamento','Temos uma ideia, mas não formalizamos ainda'],
       ['Sim, com identidade visual e narrativa de marca alinhadas','Temos uma proposta visual, mas sem estratégia por trás','Estamos iniciando o desenvolvimento','Ainda não tratamos disso','Outra opção'],
@@ -115,11 +93,11 @@
       ['Gerar leads qualificados e com potencial real de compra','Comunicar valor e se destacar da concorrência','Ter uma régua de vendas com constância','Engajar os corretores de forma eficiente','Não saber por onde começar com a comunicação']
     ];
 
+    // Elementos DOM
     const userForm   = document.getElementById('userForm');
     const quizEl     = document.getElementById('quiz');
     const loadingEl  = document.getElementById('loading');
     const successEl  = document.getElementById('successMsg');
-    const chartDiv   = document.getElementById('chart-container');
     const btnStart   = document.getElementById('btnStart');
     const btnNext    = document.getElementById('btnNext');
     const btnBack    = document.getElementById('btnBack');
@@ -129,13 +107,6 @@
     let nomeUsuario, emailUsuario, telefoneUsuario;
     let idxPergunta = 0;
     const respostas = [];
-    let mercadoData = { respostasMercado: [] };
-
-    // carrega médias anteriores
-    fetch('/api/mercado')
-      .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
-      .then(d => mercadoData = d)
-      .catch(() => {});
 
     btnStart.addEventListener('click', () => {
       document.getElementById('errorName').textContent = '';
@@ -147,95 +118,88 @@
       const t = document.getElementById('userPhone').value.trim();
       let valid = true;
 
-      if (!n) {
-        document.getElementById('errorName').textContent = 'Nome obrigatório.';
-        valid = false;
-      }
-      if (!e) {
-        document.getElementById('errorEmail').textContent = 'E-mail obrigatório.';
-        valid = false;
-      } else if (!e.includes('@')) {
-        document.getElementById('errorEmail').textContent = 'Formato de e-mail inválido.';
-        valid = false;
-      }
-      if (!t) {
-        document.getElementById('errorPhone').textContent = 'Telefone obrigatório.';
-        valid = false;
-      } else if (!t.match(/\(\d{2}\) \d{4,5}-\d{4}/)) {
-        document.getElementById('errorPhone').textContent = 'Formato inválido.';
-        valid = false;
-      }
+      if (!n) { document.getElementById('errorName').textContent = 'Nome obrigatório.'; valid = false; }
+      // validação de e-mail removida
+      if (!t) { document.getElementById('errorPhone').textContent = 'Telefone obrigatório.'; valid = false; }
+      else if (!t.match(/\(\d{2}\) \d{4,5}-\d{4}/)) { document.getElementById('errorPhone').textContent = 'Formato inválido.'; valid = false; }
 
       if (!valid) return;
 
       nomeUsuario     = n;
       emailUsuario    = e;
       telefoneUsuario = t;
-      userForm.style.display   = 'none';
-      quizEl.style.display     = 'block';
+      userForm.style.display = 'none';
+      quizEl.style.display   = 'block';
       renderPergunta(0);
     });
 
-    opcoesEl.addEventListener('change', e => {
-      if (e.target.name === 'resp') btnNext.disabled = false;
-    });
+    function renderPergunta(i) {
+      perguntaEl.textContent = perguntas[i];
+      opcoesEl.innerHTML     = '';
+      btnNext.disabled       = true;
 
-    btnNext.addEventListener('click', async () => {
-      respostas[idxPergunta] = Number(
-        document.querySelector('input[name="resp"]:checked').value
-      );
+      alternativasPorPergunta[i].forEach((textoAlt, j) => {
+        const label = document.createElement('label');
+        label.className = 'option-label';
+        label.htmlFor   = `opt${i}_${j}`;
+
+        const radio = document.createElement('input');
+        radio.type  = 'radio';
+        radio.name  = 'resp';
+        radio.value = j + 1;
+        radio.id    = label.htmlFor;
+        radio.addEventListener('change', () => btnNext.disabled = false);
+
+        const span = document.createElement('span');
+        span.innerHTML = `<strong>${String.fromCharCode(97+j)})</strong> ${textoAlt}`;
+
+        label.append(radio, span);
+        opcoesEl.appendChild(label);
+      });
+
+      btnBack.style.display = i > 0 ? 'inline-block' : 'none';
+    }
+
+    btnNext.addEventListener('click', () => {
+      respostas[idxPergunta] = Number(document.querySelector('input[name="resp"]:checked').value);
       idxPergunta++;
-
       if (idxPergunta < perguntas.length) {
         renderPergunta(idxPergunta);
       } else {
-        // termina quiz e inicia envio
-        quizEl.style.display    = 'none';
-        successEl.style.display = 'none';
+        quizEl.style.display   = 'none';
         loadingEl.style.display = 'block';
-        chartDiv.style.display  = 'block';
-        chartDiv.style.visibility = 'hidden';
 
-        await new Promise(r => setTimeout(r, 50));
+        fetch('/submit-quiz', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome: nomeUsuario, email: emailUsuario, telefone: telefoneUsuario, respostas })
+        })
+        .then(r => r.json())
+        .then(json => {
+          loadingEl.style.display = 'none';
+          successEl.style.display = 'block';
 
-        const chart = gerarGrafico();
-        const img   = chart.toBase64Image();
+          // monta o mesmo HTML que vai no e-mail
+          let html = `Resultado do Quiz\n\n` +
+            `Nome: ${nomeUsuario}\n` +
+            `E-mail: ${emailUsuario}\n` +
+            `Telefone: ${telefoneUsuario}\n\n` +
+            `Suas Respostas:\n`;
 
-        try {
-          await fetch('/api/mercado', {
-            method: 'POST',
-            headers: { 'Content-Type':'application/json' },
-            body: JSON.stringify({ nome: nomeUsuario, email: emailUsuario, telefone: telefoneUsuario, respostas })
+          perguntas.forEach((pergunta, i) => {
+            const texto = alternativasPorPergunta[i][respostas[i]-1] || '—';
+            html += `${i+1}. ${pergunta}\n   → ${texto}\n`;
           });
 
-          const resEmail = await fetch('/enviar-grafico', {
-            method:'POST',
-            headers:{ 'Content-Type':'application/json' },
-            body: JSON.stringify({
-              imagem: img,
-              emails: [emailUsuario, 'brunobafilli@gmail.com'],
-              nome: nomeUsuario,
-              emailEnvio: emailUsuario,
-              telefone: telefoneUsuario,
-              perguntas,
-              alternativasPorPergunta,
-              respostas
-            })
-          });
-          if (!resEmail.ok) {
-            const err = await resEmail.json();
-            console.error('Erro enviar gráfico:', err);
-            alert('Falha ao enviar e-mail: ' + err.error);
-          }
-        } catch (error) {
-          console.error('Erro na requisição:', error);
-          alert('Erro de rede ao enviar e-mail.');
-        }
+          html += `\nLink para o gráfico: ${json.link}`;
 
-        // após envio, oculta o gráfico e mostra mensagem de sucesso
-        loadingEl.style.display = 'none';
-        chartDiv.style.display  = 'none';
-        successEl.style.display = 'block';
+          // exibe no console do navegador
+          console.log(html);
+        })
+        .catch(err => {
+          loadingEl.style.display = 'none';
+          alert('Erro ao enviar: ' + err.message);
+        });
       }
     });
 
@@ -244,125 +208,8 @@
         idxPergunta--;
         respostas.pop();
         renderPergunta(idxPergunta);
-      } else {
-        quizEl.style.display   = 'none';
-        userForm.style.display = 'block';
       }
     });
-
-    function renderPergunta(i) {
-      perguntaEl.textContent = perguntas[i];
-      opcoesEl.innerHTML     = '';
-      btnNext.disabled       = true;
-      alternativasPorPergunta[i].forEach((txt,optIdx) => {
-        const label = document.createElement('label');
-        label.className = 'option-label';
-        label.htmlFor = `opt${i}_${optIdx}`;
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'resp';
-        radio.value = optIdx+1;
-        radio.id = label.htmlFor;
-        const dot = document.createElement('span');
-        dot.className = 'box-radio';
-        const span = document.createElement('span');
-        span.className = 'span-text';
-        span.innerHTML = `<strong>${String.fromCharCode(97+optIdx)})</strong> ${txt}`;
-        label.append(radio, dot, span);
-        opcoesEl.appendChild(label);
-      });
-      if (respostas[i] != null) {
-        const prev = respostas[i] - 1;
-        const inp = document.getElementById(`opt${i}_${prev}`);
-        if (inp) { inp.checked = true; btnNext.disabled = false; }
-      }
-      btnBack.style.display = 'inline-block';
-    }
-
-    function calcMediaMercado() {
-      const arr = mercadoData.respostasMercado || [];
-      if (!arr.length) return Array(perguntas.length).fill(0);
-      const soma = Array(perguntas.length).fill(0);
-      arr.forEach(it => it.respostas.forEach((v,k) => soma[k] += v));
-      return soma.map(s => (s/arr.length).toFixed(1));
-    }
-
-    function gerarGrafico() {
-      const ctx = document.getElementById('myChart').getContext('2d');
-      const bg = {
-        id: 'bg_white',
-        beforeDraw(chart) {
-          const c = chart.ctx;
-          c.save();
-          c.globalCompositeOperation = 'destination-over';
-          c.fillStyle = '#fff';
-          c.fillRect(0, 0, chart.width, chart.height);
-          c.restore();
-        }
-      };
-      return new Chart(ctx, {
-        type: 'radar',
-        data: {
-          labels: perguntas.map(q => {
-            const ws = q.split(' '), ls = [], m = 30;
-            let ln = '';
-            ws.forEach(w => {
-              if ((ln + ' ' + w).trim().length > m) { ls.push(ln.trim()); ln = w; }
-              else ln = (ln + ' ' + w).trim();
-            });
-            if (ln) ls.push(ln);
-            return ls;
-          }),
-          datasets: [
-            {
-              label: 'Média Mercado',
-              data: calcMediaMercado(),
-              backgroundColor: 'rgba(255,99,132,0.2)',
-              borderColor: 'rgba(255,99,132,1)',
-              borderWidth: 2,
-              pointBackgroundColor: 'rgba(255,99,132,1)'
-            },
-            {
-              label: 'Ideal',
-              data: Array(perguntas.length).fill(5),
-              backgroundColor: 'rgba(54,162,235,0.2)',
-              borderColor: 'rgba(54,162,235,1)',
-              borderWidth: 2,
-              pointBackgroundColor: 'rgba(54,162,235,1)'
-            },
-            {
-              label: 'Meus Dados',
-              data: respostas,
-              backgroundColor: 'rgba(75,192,192,0.2)',
-              borderColor: 'rgba(75,192,192,1)',
-              borderWidth: 2,
-              pointBackgroundColor: 'rgba(75,192,192,1)'
-            }
-          ]
-        },
-        options: {
-          animation: false,
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            r: {
-              min: 1,
-              max: 5,
-              ticks: { stepSize: 1 },
-              pointLabels: { font: { size: 11 }, padding: 16 },
-              angleLines: { color: '#ccc' },
-              grid: { color: '#eee' }
-            }
-          },
-          plugins: {
-            legend: { position: 'top', labels: { boxWidth: 12, padding: 16 } },
-            title: { display: true, text: 'Comparativo: Mercado × Ideal × Meus Dados', font: { size: 18 } },
-            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } }
-          }
-        },
-        plugins: [bg]
-      });
-    }
   </script>
 </body>
 </html>
