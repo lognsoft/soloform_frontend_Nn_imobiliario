@@ -3,6 +3,7 @@ const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
 const fs         = require('fs');
 const path       = require('path');
+const session    = require('express-session');
 
 const app = express();
 const dataPath = path.join(__dirname, 'data', 'mercado.json');
@@ -10,6 +11,22 @@ const dataPath = path.join(__dirname, 'data', 'mercado.json');
 // Servir arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json({ limit: '15mb' }));
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// configuração de sessão
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'troqueEstaChave',
+  resave: false,
+  saveUninitialized: false
+}));
+
+// middleware que exige login
+function checkAuth(req, res, next) {
+  if (req.session && req.session.user) {
+    return next();
+  }
+  res.redirect('/admin/login');
+}
 
 // Configuração SMTP
 const transporter = nodemailer.createTransport({
@@ -62,7 +79,15 @@ app.post('/submit-quiz', (req, res) => {
     try { data = JSON.parse(content); }
     catch { return res.status(500).json({ error: 'JSON corrompido.' }); }
     const nextId = data.respostasMercado.reduce((m, x) => Math.max(m, x.id), 0) + 1;
-    data.respostasMercado.push({ id: nextId, nome, email, telefone, respostas, createdAt: new Date().toISOString() });
+    data.respostasMercado.push({
+      id: nextId,
+      nome,
+      email,
+      telefone,
+      respostas,
+      createdAt: new Date().toISOString(),
+      checked: false
+    });
     fs.writeFile(dataPath, JSON.stringify(data, null, 2), 'utf8', writeErr => {
       if (writeErr) return res.status(500).json({ error: 'Falha ao gravar.' });
       const link = `${req.protocol}://${req.get('host')}/result/${nextId}`;
@@ -70,7 +95,7 @@ app.post('/submit-quiz', (req, res) => {
         from: 'brunobafilli@gmail.com',
         to: email,
         subject: 'Seu resultado do Quiz',
-        html: `<h2>Olá ${nome},</h2><p>Seu quiz foi recebido!<br/><a href="${link}">Clique aqui para ver seu gráfico</a>.</p>`
+        html: `<h2>Olá ${nome},</h2><p>Seu quiz foi recebido!<br/> Em breve entraremos em contato!</p>`
       }, errMail => {
         if (errMail) return res.status(500).json({ error: 'Falha ao enviar e-mail.' });
         res.json({ success: true, link });
@@ -79,9 +104,8 @@ app.post('/submit-quiz', (req, res) => {
   });
 });
 
-// GET /result/:id (exibe gráfico, downloads e botão de resposta)
-// GET /result/:id (exibe gráfico, downloads e botão de resposta com Quill)
-app.get('/result/:id', (req, res) => {
+// GET /result/:id
+app.get('/result/:id', checkAuth, (req, res) => {
   const id = Number(req.params.id);
   const content = fs.readFileSync(dataPath, 'utf8');
   const data    = JSON.parse(content);
@@ -100,8 +124,10 @@ app.get('/result/:id', (req, res) => {
     alternativasPorPergunta[i][v-1] || '—'
   );
 
-  // renderiza HTML
-  res.send(`
+  const isChecked = item.checked === true;
+
+  
+res.send(`
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -118,12 +144,27 @@ app.get('/result/:id', (req, res) => {
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
   <style>
-    body, html { margin:0; height:100%; font-family:sans-serif; }
+    body, html { margin:0; height:100%; font-family:sans-serif; position:relative; }
+    .back-btn {
+      top:1rem;
+      left:1rem;
+      background:#6c757d;
+      color:#fff;
+      border:none;
+      padding:.5rem 1rem;
+      border-radius:4px;
+      cursor:pointer;
+      font-size:1rem;
+    }
+    .attended {
+      position:absolute; top:1rem; right:1rem;
+      font-size:1rem;
+    }
     .container { display:flex; height:100%; }
     .left {
-      width:30%; min-width:280px;
-      padding:1rem; overflow-y:auto;
-      background:#f7f7f7; font-size:0.9rem;
+      width:30%; min-width:280px; padding:1rem;
+      overflow-y:auto; background:#f7f7f7;
+      font-size:0.9rem; position:relative;
     }
     .right {
       flex:1; display:flex; flex-direction:column;
@@ -140,13 +181,12 @@ app.get('/result/:id', (req, res) => {
     /* Modal */
     #replyModal {
       display:none; position:fixed; top:0; left:0;
-      width:100%; height:100%;
-      background:rgba(0,0,0,0.5);
+      width:100%; height:100%; background:rgba(0,0,0,0.5);
       align-items:center; justify-content:center;
     }
     #replyModal .modal-content {
-      background:#fff; padding:1rem;
-      border-radius:4px; width:90%; max-width:500px;
+      background:#fff; padding:1rem; border-radius:4px;
+      width:90%; max-width:500px;
     }
     #editor { height:200px; background:#fff; }
     .modal-content .actions {
@@ -155,32 +195,46 @@ app.get('/result/:id', (req, res) => {
     .modal-content .actions button {
       margin-left:.5rem;
     }
-    /* Spinner */
-    #replySpinner {
-      display:none;
-      text-align:center;
-      margin-top:1rem;
-    }
+    #replySpinner { display:none; text-align:center; margin-top:1rem; }
   </style>
 </head>
 <body>
+
+  <div class="attended">
+    <label>
+      <input type="checkbox" id="attendedCheckbox" ${isChecked ? 'checked' : ''}>
+      Cliente atendido
+    </label>
+  </div>
+
   <div class="container">
     <div class="left">
+      <!-- Atualizado: navega para /admin em vez de history.back() -->
+      <button class="back-btn" onclick="window.location.href = window.location.origin + '/admin'">← Voltar</button>
       <h3>Seus Dados</h3>
       <p>
         <strong>Nome:</strong> ${item.nome}<br/>
         <strong>E-mail:</strong> ${item.email}<br/>
         <strong>Telefone:</strong> ${item.telefone}
       </p>
+
       <h3>Suas Respostas</h3>
-      <ol style ="padding-left: 15px">
-        ${perguntas.map((p,i)=>
-          `<ol style="padding: 0px; margin-top:10px;"><strong>${p}</strong><br/>${respostasTexto[i]}</ol>`
-        ).join('')}
+      <ol style="padding-left:15px">
+        ${
+          perguntas.map((p, i) => `
+            <li style="padding-bottom: 10px">
+              <strong>${p.replace(/^\d+\.\\s*/, '')}</strong><br/>
+              ${respostasTexto[i]}
+            </li>
+          `).join('')
+        }
       </ol>
     </div>
+
     <div class="right">
-      <div id="chart-wrapper"><canvas id="myChart"></canvas></div>
+      <div id="chart-wrapper">
+        <canvas id="myChart"></canvas>
+      </div>
       <div class="buttons">
         <button id="downloadJpg">Baixar JPG</button>
         <button id="downloadPdf">Baixar PDF</button>
@@ -189,25 +243,21 @@ app.get('/result/:id', (req, res) => {
     </div>
   </div>
 
-  <!-- Modal de resposta -->
   <div id="replyModal">
     <div class="modal-content">
-      <p><strong>De:</strong> brunobafilli@gmail.com<br/><strong>Para:</strong> ${item.email}</p>
+      <p>
+        <strong>De:</strong> brunobafilli@gmail.com<br/>
+        <strong>Para:</strong> ${item.email}
+      </p>
       <div id="editor"></div>
-      <!-- Spinner -->
       <div id="replySpinner">
         <svg width="38" height="38" viewBox="0 0 38 38" stroke="#555">
           <g fill="none" fill-rule="evenodd">
             <g transform="translate(1 1)" stroke-width="2">
               <circle stroke-opacity=".3" cx="18" cy="18" r="18"/>
               <path d="M36 18c0-9.94-8.06-18-18-18">
-                <animateTransform
-                  attributeName="transform"
-                  type="rotate"
-                  from="0 18 18"
-                  to="360 18 18"
-                  dur="1s"
-                  repeatCount="indefinite"/>
+                <animateTransform attributeName="transform" type="rotate"
+                  from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite"/>
               </path>
             </g>
           </g>
@@ -222,7 +272,7 @@ app.get('/result/:id', (req, res) => {
   </div>
 
   <script>
-    // Plugin fundo branco Chart.js
+    // plugin para fundo branco no Chart.js
     const bgWhite = {
       id: 'bg_white',
       beforeDraw(chart) {
@@ -235,7 +285,7 @@ app.get('/result/:id', (req, res) => {
       }
     };
 
-    // Wrap labels
+    // quebra de linha em labels longas
     function wrapLabel(text, maxLen) {
       const words = text.split(' '), lines = [''];
       words.forEach(w => {
@@ -248,79 +298,106 @@ app.get('/result/:id', (req, res) => {
 
     const rawLabels = ${JSON.stringify(perguntas)};
     const responses = ${JSON.stringify(item.respostas)};
-    const mediaData  = ${JSON.stringify(media.map(v=>+v.toFixed(1)))};
-    const labels = rawLabels.map(l=>wrapLabel(l,25)), ideal = Array(labels.length).fill(5);
+    const mediaData  = ${JSON.stringify(media.map(v => +v.toFixed(1)))};
+    const labels     = rawLabels.map(l => wrapLabel(l, 25));
+    const ideal      = Array(labels.length).fill(5);
 
-    // Chart.js Radar
+    // configura o radar chart
     const ctxChart = document.getElementById('myChart').getContext('2d');
     new Chart(ctxChart, {
-      type:'radar',
-      data:{ labels, datasets:[
-        { label:'Média Mercado', data:mediaData, borderWidth:3, borderDash:[5,5] },
-        { label:'Ideal (5)',     data:ideal,     borderWidth:2, borderDash:[7,3] },
-        { label:'Meus Dados',    data:responses, borderWidth:3 }
-      ]},
-      options:{
-        responsive:true, maintainAspectRatio:false,
-        scales:{ r:{
-          min:1,max:5,
-          ticks:{stepSize:1,font:{size:14}},
-          pointLabels:{font:{size:12},padding:10}
-        }},
-        plugins:{ bg_white:{}, legend:{position:'top',labels:{font:{size:14}}}, title:{display:true,text:'Comparativo',font:{size:18}}}
+      type: 'radar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Média Mercado', data: mediaData, borderWidth: 3, borderDash: [5,5] },
+          { label: 'Ideal (5)', data: ideal, borderWidth: 2, borderDash: [7,3] },
+          { label: 'Meus Dados', data: responses, borderWidth: 3 }
+        ]
       },
-      plugins:[bgWhite]
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            min: 1,
+            max: 5,
+            ticks: { stepSize: 1, font: { size: 14 } },
+            pointLabels: { font: { size: 12 }, padding: 10 }
+          }
+        },
+        plugins: {
+          bg_white: {},
+          legend: { position: 'top', labels: { font: { size: 14 } } },
+          title: { display: true, text: 'Comparativo', font: { size: 18 } }
+        }
+      },
+      plugins: [ bgWhite ]
     });
 
     const canvas = document.getElementById('myChart');
 
-    // Downloads
+    // download JPG
     document.getElementById('downloadJpg').onclick = () => {
       const a = document.createElement('a');
-      a.href     = canvas.toDataURL('image/jpeg',1.0);
+      a.href     = canvas.toDataURL('image/jpeg', 1.0);
       a.download = 'grafico.jpg';
       a.click();
     };
+
+    // download PDF
     document.getElementById('downloadPdf').onclick = () => {
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ orientation:'landscape', unit:'px', format:[canvas.width,canvas.height] });
+      const pdf = new jsPDF({
+        orientation:'landscape',
+        unit:'px',
+        format:[canvas.width, canvas.height]
+      });
       pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,canvas.width,canvas.height);
       pdf.save('grafico.pdf');
     };
 
-    // Quill
-    const quill = new Quill('#editor',{ theme:'snow', modules:{ toolbar:[['bold','italic','underline'],[{list:'bullet'},{list:'ordered'}],['link']] } });
+    // inicializa o Quill
+    const quill = new Quill('#editor', {
+      theme:'snow',
+      modules:{ toolbar:[['bold','italic','underline'], [{ list:'bullet' },{ list:'ordered' }], ['link']] }
+    });
 
-    // Modal controls
+    // abre/fecha modal
     document.getElementById('btnReply').onclick    = () => document.getElementById('replyModal').style.display = 'flex';
     document.getElementById('cancelReply').onclick = () => document.getElementById('replyModal').style.display = 'none';
 
-    // Enviar com spinner e bloqueio do editor
+    // envia a resposta
     document.getElementById('sendReply').onclick = async () => {
       const btnSend   = document.getElementById('sendReply');
       const btnCancel = document.getElementById('cancelReply');
       const spinner   = document.getElementById('replySpinner');
 
-      if (quill.getText().trim().length === 0) return alert('Digite uma mensagem.');
+      if (!quill.getText().trim()) {
+        return alert('Digite uma mensagem.');
+      }
 
-      // bloqueia editor e botões, mostra spinner
       quill.enable(false);
       btnSend.disabled   = true;
       btnCancel.disabled = true;
       spinner.style.display = 'block';
 
       const replyHtml = quill.root.innerHTML;
-      const jpg       = canvas.toDataURL('image/jpeg',1.0);
+      const jpg       = canvas.toDataURL('image/jpeg', 1.0);
       const { jsPDF } = window.jspdf;
-      const pdfDoc    = new jsPDF({ orientation:'landscape', unit:'px', format:[canvas.width,canvas.height] });
+      const pdfDoc    = new jsPDF({
+        orientation:'landscape',
+        unit:'px',
+        format:[canvas.width, canvas.height]
+      });
       pdfDoc.addImage(canvas.toDataURL('image/png'),'PNG',0,0,canvas.width,canvas.height);
       const pdfData   = pdfDoc.output('datauristring');
 
       try {
-        const res = await fetch('/reply/${item.id}', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json' },
-          body: JSON.stringify({ reply:replyHtml, jpg, pdf:pdfData })
+        const res = await fetch(\`/reply/${item.id}\`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reply: replyHtml, jpg, pdf: pdfData }),
+          credentials: 'include'
         });
         if (!res.ok) throw new Error('Envio falhou');
         alert('Resposta enviada com sucesso!');
@@ -335,19 +412,51 @@ app.get('/result/:id', (req, res) => {
         quill.enable(true);
       }
     };
+
+    // handler do checkbox de atendimento
+    document.getElementById('attendedCheckbox').addEventListener('change', async (e) => {
+      try {
+        const res = await fetch(\`/result/${item.id}/check\`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ checked: e.target.checked }),
+          credentials: 'include'
+        });
+        if (!res.ok) throw new Error();
+      } catch {
+        alert('Erro ao atualizar status.');
+        e.target.checked = !e.target.checked;
+      }
+    });
   </script>
 </body>
 </html>
 `);
 
 
-
-
 });
 
+// POST /result/:id/check
+app.post('/result/:id/check', checkAuth, (req, res) => {
+  const id = Number(req.params.id);
+  const { checked } = req.body;
+  fs.readFile(dataPath, 'utf8', (err, content) => {
+    if (err) return res.status(500).json({ error: 'Erro ao ler dados.' });
+    let data;
+    try { data = JSON.parse(content); }
+    catch { return res.status(500).json({ error: 'JSON inválido.' }); }
+    const record = data.respostasMercado.find(u => u.id === id);
+    if (!record) return res.status(404).json({ error: 'Registro não encontrado.' });
+    record.checked = !!checked;
+    fs.writeFile(dataPath, JSON.stringify(data, null, 2), 'utf8', writeErr => {
+      if (writeErr) return res.status(500).json({ error: 'Falha ao gravar.' });
+      res.json({ success: true });
+    });
+  });
+});
 
 // POST /reply/:id
-app.post('/reply/:id', (req, res) => {
+app.post('/reply/:id', checkAuth, (req, res) => {
   const id = Number(req.params.id);
   const { reply, jpg, pdf } = req.body;
   const data = JSON.parse(fs.readFileSync(dataPath,'utf8'));
@@ -378,49 +487,175 @@ app.post('/reply/:id', (req, res) => {
   });
 });
 
-// Rotas search, users, admin, raiz invariadas...
-
 // Rota de busca /api/search
-app.get('/api/search', (req, res) => {
+app.get('/api/search', checkAuth, (req, res) => {
   const q = (req.query.q || '').toLowerCase();
   fs.readFile(dataPath, 'utf8', (err, content) => {
     if (err) return res.status(500).json({ error: 'Erro ao ler dados.' });
     let data;
-    try { data = JSON.parse(content); } catch { return res.status(500).json({ error: 'JSON inválido.' }); }
-    const results = data.respostasMercado.filter(u => {
-      return (u.nome || '').toLowerCase().includes(q) ||
-             (u.email || '').toLowerCase().includes(q) ||
-             (u.telefone || '').includes(q);
-    }).map(u => ({ id: u.id, nome: u.nome, email: u.email, telefone: u.telefone, createdAt: u.createdAt || '-' }));
+    try { data = JSON.parse(content); }
+    catch { return res.status(500).json({ error: 'JSON inválido.' }); }
+
+    const results = data.respostasMercado
+      .filter(u =>
+        (u.nome     || '').toLowerCase().includes(q) ||
+        (u.email    || '').toLowerCase().includes(q) ||
+        (u.telefone || '').includes(q)
+      )
+      .map(u => ({
+        id:        u.id,
+        nome:      u.nome,
+        email:     u.email,
+        telefone:  u.telefone,
+        createdAt: u.createdAt || '-',
+        checked:   !!u.checked   // ← e aqui também
+      }))
+    ;
+
     res.json(results);
   });
 });
-
 // Rota paginada /api/users
-app.get('/api/users', (req, res) => {
-  const page = Math.max(1, parseInt(req.query.page) || 1);
-  const pageSize = Math.max(1, parseInt(req.query.pageSize) || 10);
+app.get('/api/users', checkAuth, (req, res) => {
+  const page     = Math.max(1, parseInt(req.query.page)    || 1);
+  const pageSize = Math.max(1, parseInt(req.query.pageSize)|| 10);
+
   fs.readFile(dataPath, 'utf8', (err, content) => {
     if (err) return res.status(500).json({ error: 'Erro ao ler dados.' });
     let data;
-    try { data = JSON.parse(content); } catch { return res.status(500).json({ error: 'JSON inválido.' }); }
-    const all = (data.respostasMercado || []).slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-    const total = all.length;
+    try { data = JSON.parse(content); }
+    catch { return res.status(500).json({ error: 'JSON inválido.' }); }
+
+    const all = (data.respostasMercado || [])
+      .slice()
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    const total      = all.length;
     const totalPages = Math.ceil(total / pageSize);
-    const start = (page - 1) * pageSize;
+    const start      = (page - 1) * pageSize;
+
     const usersPage = all.slice(start, start + pageSize).map(u => ({
-      id: u.id,
-      nome: u.nome,
-      email: u.email,
-      telefone: u.telefone,
-      createdAt: u.createdAt || '-'
+      id:        u.id,
+      nome:      u.nome,
+      email:     u.email,
+      telefone:  u.telefone,
+      createdAt: u.createdAt || '-',
+      checked:   !!u.checked       // ← aqui incluímos o campo checked
     }));
+
     res.json({ page, pageSize, total, totalPages, users: usersPage });
   });
 });
 
+// formulário de login
+app.get('/admin/login', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8"/>
+      <meta name="viewport" content="width=device-width, initial-scale=1"/>
+      <title>Login Admin</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          font-family: sans-serif;
+          background-color: #f0f2f5;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+        }
+        .login-container {
+          background: #fff;
+          padding: 2rem;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+          width: 100%;
+          max-width: 360px;
+        }
+        .login-container h1 {
+          font-size: 1.5rem;
+          color: #333;
+          margin-bottom: 1.5rem;
+          text-align: center;
+        }
+        .login-container form {
+          display: flex;
+          flex-direction: column;
+        }
+        .login-container label {
+          font-size: 1rem;
+          color: #555;
+          margin-bottom: 1rem;
+        }
+        .login-container input {
+          margin-top: 0.5rem;
+          padding: 0.5rem;
+          font-size: 1rem;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          width: 100%;
+        }
+        .login-container button {
+          margin-top: 1.5rem;
+          padding: 0.75rem;
+          font-size: 1rem;
+          background-color: #007bff;
+          color: #fff;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: background-color 0.2s ease;
+        }
+        .login-container button:hover {
+          background-color: #0056b3;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="login-container">
+        <h1>Área Administrativa</h1>
+        <form action="/admin/login" method="POST">
+          <label>
+            Usuário
+            <input type="text" name="username" required />
+          </label>
+          <label>
+            Senha
+            <input type="password" name="password" required />
+          </label>
+          <button type="submit">Entrar</button>
+        </form>
+      </div>
+    </body>
+    </html>
+  `);
+});
+
+// validação de credenciais
+app.post('/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  const ADMIN_USER = process.env.ADMIN_USER || 'admin';
+  const ADMIN_PASS = process.env.ADMIN_PASS || 'admin@123';
+
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    req.session.user = username;
+    return res.redirect('/admin');
+  }
+
+  res.send('Usuário ou senha inválidos. <a href="/admin/login">Tentar novamente</a>');
+});
+
+// logout
+app.get('/admin/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.redirect('/admin/login');
+  });
+});
+
 // Rota admin
-app.get('/admin', (req, res) => {
+app.get('/admin', checkAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 

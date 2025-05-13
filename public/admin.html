@@ -10,8 +10,23 @@
       margin: 2rem;
       background: #f0f2f5;
     }
-    h1 {
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 1rem;
+    }
+    h1 {
+      margin: 0;
+    }
+    .logout-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
     }
     .search-box {
       margin-bottom: 1rem;
@@ -38,15 +53,22 @@
     }
     ul.results li .date {
       position: absolute;
-      top: .5rem;
+      top: 0.5rem;
       right: 1rem;
       font-size: .8rem;
       color: #666;
     }
+    ul.results li .attended-icon {
+      position: absolute;
+      left: 1rem;
+      font-size: 1rem;
+      color: #28a745; /* verde */
+    }
     ul.results li a {
+      display: block;
+      margin-left: 2rem; /* espaço para o ícone */
       color: #333;
       text-decoration: none;
-      display: block;
     }
     ul.results li a:hover {
       text-decoration: underline;
@@ -72,7 +94,12 @@
   </style>
 </head>
 <body>
-  <h1>Painel Administrativo</h1>
+  <header>
+    <h1>Painel Administrativo</h1>
+    <button class="logout-btn" onclick="location.href='/admin/logout'">
+      Logout
+    </button>
+  </header>
 
   <div class="search-box">
     <input id="q" placeholder="Buscar por nome, e-mail ou telefone…" autocomplete="off" />
@@ -85,12 +112,10 @@
     const input = document.getElementById('q');
     const resultsList = document.getElementById('results');
     const paginationDiv = document.getElementById('pagination');
-
     const pageSize = 10;
     let currentPage = 1;
     let typingTimer;
 
-    // Renderiza lista de usuários
     function renderUsers(users) {
       if (!users.length) {
         resultsList.innerHTML = '<li>Nenhum usuário encontrado.</li>';
@@ -98,11 +123,17 @@
       }
       resultsList.innerHTML = users.map(u => `
         <li>
-          <span class="date">${u.createdAt === '-' 
-            ? '-' 
-            : new Date(u.createdAt).toLocaleDateString() + ' ' + new Date(u.createdAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
-          </span>
-          <a href="/result/${u.id}" target="_blank">
+          ${u.checked
+            ? '<span class="attended-icon">✔</span>'
+            : ''
+          }
+          <span class="date">${
+            u.createdAt === '-' 
+              ? '-' 
+              : new Date(u.createdAt).toLocaleDateString() + ' ' +
+                new Date(u.createdAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
+          }</span>
+          <a href="/result/${u.id}" target="_self">
             <strong>${u.nome}</strong><br/>
             ${u.email} · ${u.telefone}
           </a>
@@ -110,7 +141,6 @@
       `).join('');
     }
 
-    // Cria paginação
     function renderPagination(page, totalPages) {
       let html = '';
       html += `<button ${page===1?'disabled':''} data-page="${page-1}">‹ Anterior</button>`;
@@ -118,23 +148,16 @@
       html += `<button ${page===totalPages?'disabled':''} data-page="${page+1}">Próximo ›</button>`;
       paginationDiv.innerHTML = html;
       paginationDiv.querySelectorAll('button').forEach(btn => {
-        btn.onclick = () => {
-          const p = Number(btn.getAttribute('data-page'));
-          loadPage(p);
-        };
+        btn.onclick = () => loadPage(Number(btn.getAttribute('data-page')));
       });
     }
 
-    // Busca inteligente
     async function search(query) {
-      if (!query) {
-        loadPage(1);
-        return;
-      }
+      if (!query) { loadPage(1); return; }
       paginationDiv.innerHTML = '';
       resultsList.innerHTML = '<li>Buscando…</li>';
       try {
-        const res = await fetch('/api/search?q=' + encodeURIComponent(query));
+        const res = await fetch('/api/search?q=' + encodeURIComponent(query), { credentials: 'include' });
         const users = await res.json();
         renderUsers(users);
       } catch (e) {
@@ -143,17 +166,13 @@
       }
     }
 
-    // Carrega página com paginação
     async function loadPage(page = 1) {
       currentPage = page;
       const q = input.value.trim();
-      if (q) {
-        search(q);
-        return;
-      }
+      if (q) { search(q); return; }
       resultsList.innerHTML = '<li>Carregando…</li>';
       try {
-        const res = await fetch(`/api/users?page=${page}&pageSize=${pageSize}`);
+        const res = await fetch(`/api/users?page=${page}&pageSize=${pageSize}`, { credentials: 'include' });
         const { users, totalPages } = await res.json();
         renderUsers(users);
         renderPagination(page, totalPages);
@@ -163,13 +182,11 @@
       }
     }
 
-    // Debounce de digitação
     input.addEventListener('input', () => {
       clearTimeout(typingTimer);
       typingTimer = setTimeout(() => search(input.value.trim()), 300);
     });
 
-    // Inicia página 1
     window.addEventListener('load', () => loadPage(1));
   </script>
 </body>
