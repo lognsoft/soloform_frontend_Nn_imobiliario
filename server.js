@@ -520,36 +520,95 @@ app.post('/result/:id/check', checkAuth, (req, res) => {
 });
 
 // POST /reply/:id
-app.post('/reply/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const { reply, jpg, pdf } = req.body;
-  const data = JSON.parse(fs.readFileSync(dataPath,'utf8'));
-  const user = data.respostasMercado.find(u => u.id === id);
-  if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
-  let html = `<h2>Resposta ao seu Quiz</h2><p>${reply}</p><hr/><h3>Seus Dados</h3><p><strong>Nome:</strong> ${user.nome}<br/><strong>E-mail:</strong> ${user.email}<br/><strong>Telefone:</strong> ${user.telefone}</p><h3>Suas Respostas</h3><ol>`;
-  user.respostas.forEach((v,i) => {
-    const txt = alternativasPorPergunta[i][v-1] || '—';
-    html += `<li list-style ="none"><strong>${perguntas[i]}</strong><br/>${txt}</li><hr>`;
-  });
-  html += '</ol>';
-  const attachments = [
-    { filename: 'grafico.jpg', content: Buffer.from(jpg.split('base64,')[1], 'base64') },
-    { filename: 'grafico.pdf', content: Buffer.from(pdf.split('base64,')[1], 'base64') }
-  ];
-  transporter.sendMail({
-    from: 'brunobafilli@gmail.com',
-    to: user.email,
-    subject: 'Resposta ao seu Quiz',
-    html,
-    attachments
-  }, err => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Falha ao enviar e-mail.' });
-    }
-    res.json({ success: true });
+app.post('/submit-quiz', (req, res) => {
+  const { nome, email, telefone, respostas } = req.body;
+  if (!nome || !email || !telefone || !Array.isArray(respostas)) {
+    return res.status(400).json({ error: 'Dados inválidos.' });
+  }
+
+  fs.readFile(dataPath, 'utf8', (err, content) => {
+    if (err) return res.status(500).json({ error: 'Erro ao ler dados.' });
+    let data;
+    try { data = JSON.parse(content); }
+    catch { return res.status(500).json({ error: 'JSON corrompido.' }); }
+
+    const nextId = data.respostasMercado.reduce((m, x) => Math.max(m, x.id), 0) + 1;
+    data.respostasMercado.push({
+      id: nextId,
+      nome,
+      email,
+      telefone,
+      respostas,
+      createdAt: new Date().toISOString(),
+      checked: false
+    });
+
+    fs.writeFile(dataPath, JSON.stringify(data, null, 2), 'utf8', writeErr => {
+      if (writeErr) return res.status(500).json({ error: 'Falha ao gravar.' });
+
+      const link = `${req.protocol}://${req.get('host')}/result/${nextId}`;
+
+      // Converte respostas (índice ou texto) em texto legível
+      const respostasTexto = respostas.map((v, i) => {
+        if (typeof v === 'number')       return alternativasPorPergunta[i][v - 1] || '—';
+        else if (typeof v === 'string')  return v;
+        else                              return '—';
+      });
+
+      // 1) Envia o questionário completo para o e-mail preenchido pelo usuário
+      transporter.sendMail({
+        from:    'brunobafilli@gmail.com',
+        to:      email,    // usa o e-mail que o usuário preencheu
+        subject: `Novo envio de questionário imobiliário (#${nextId})`,
+        html: `
+          <h2>Novo envio de questionário imobiliário (#${nextId})</h2>
+          <p><strong>Nome:</strong> ${nome}</p>
+          <p><strong>E-mail:</strong> ${email}</p>
+          <p><strong>Telefone:</strong> ${telefone}</p>
+          <h3>Perguntas e Respostas:</h3>
+          <ul>
+            ${
+              perguntas.map((p, i) => `
+                <li style="list-style:none">
+                  <strong>${p.replace(/^\d+\.\s*/, '')}</strong><br/>
+                  Resposta: ${respostasTexto[i]}
+                </li>
+                <hr>
+              `).join('')
+            }
+          </ul>
+          <p>
+            <strong>Link para visualizar gráfico e detalhes:</strong><br/>
+            <a href="${link}">${link}</a>
+          </p>
+        `
+      }, errEnvio => {
+        if (errEnvio) {
+          console.error('Erro enviando e-mail para o usuário:', errEnvio);
+          return res.status(500).json({ error: 'Falha ao enviar e-mail.' });
+        }
+
+        // 2) Mensagem de agradecimento (opcional)
+        transporter.sendMail({
+          from:    'brunobafilli@gmail.com',
+          to:      email,
+          subject: 'Obrigado pelo seu envio!',
+          html: `
+            <h2>Olá ${nome},</h2>
+            <p>Obrigado pelo seu envio! Em breve entraremos em contato.</p>
+          `
+        }, errAck => {
+          if (errAck) {
+            console.error('Erro enviando confirmação ao cliente:', errAck);
+            return res.status(500).json({ error: 'Falha ao enviar confirmação.' });
+          }
+          res.json({ success: true, link });
+        });
+      });
+    });
   });
 });
+
 
 // Rota de busca /api/search
 app.get('/api/search', checkAuth, (req, res) => {
