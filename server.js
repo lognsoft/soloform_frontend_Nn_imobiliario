@@ -100,7 +100,7 @@ app.post('/submit-quiz', (req, res) => {
       transporter.sendMail({
         from: 'brunobafilli@gmail.com',
         to: 'brunobafilli@gmail.com',
-        subject: `Novo envio de Quiz (#${nextId})`,
+        subject: `Novo envio de questionário (#${nextId})`,
         html: `
           <h2>Novo envio de questionário imobiliário (#${nextId})</h2>
           <p><strong>Nome:</strong> ${nome}</p>
@@ -251,7 +251,7 @@ res.send(`
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Resultado do Quiz</title>
+  <title>Resultado do gráfico</title>
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

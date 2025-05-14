@@ -518,7 +518,7 @@
         5
       ],
       "createdAt": "2025-05-13T19:11:24.911Z",
-      "checked": true
+      "checked": false
     },
     {
       "id": 27,
@@ -538,6 +538,86 @@
         5
       ],
       "createdAt": "2025-05-13T19:12:06.917Z",
+      "checked": false
+    },
+    {
+      "id": 28,
+      "nome": "teste",
+      "email": "brunobafilligamer@gmail.com",
+      "telefone": "(12) 32132-1321",
+      "respostas": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "createdAt": "2025-05-14T13:08:33.732Z",
+      "checked": false
+    },
+    {
+      "id": 29,
+      "nome": "fafa",
+      "email": "teste@teste.com",
+      "telefone": "(12) 31321-3213",
+      "respostas": [
+        3,
+        2,
+        4,
+        3,
+        2,
+        1,
+        4,
+        5,
+        3,
+        5
+      ],
+      "createdAt": "2025-05-14T13:15:52.468Z",
+      "checked": false
+    },
+    {
+      "id": 30,
+      "nome": "teste",
+      "email": "teste@teste.com",
+      "telefone": "(12) 31313-2131",
+      "respostas": [
+        5,
+        4,
+        3,
+        4,
+        4,
+        5,
+        5,
+        4,
+        3,
+        3
+      ],
+      "createdAt": "2025-05-14T13:16:58.407Z",
+      "checked": false
+    },
+    {
+      "id": 31,
+      "nome": "bruno",
+      "email": "brunobafilligamer@gmail.com",
+      "telefone": "(12) 32132-1321",
+      "respostas": [
+        2,
+        4,
+        5,
+        4,
+        3,
+        4,
+        4,
+        3,
+        5,
+        5
+      ],
+      "createdAt": "2025-05-14T13:19:19.564Z",
       "checked": true
     }
   ]
