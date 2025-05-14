@@ -566,17 +566,6 @@ app.post('/submit-quiz', (req, res) => {
           <p><strong>E-mail:</strong> ${email}</p>
           <p><strong>Telefone:</strong> ${telefone}</p>
           <h3>Perguntas e Respostas:</h3>
-          <ul>
-            ${
-              perguntas.map((p, i) => `
-                <li style="list-style:none">
-                  <strong>${p.replace(/^\d+\.\s*/, '')}</strong><br/>
-                  Resposta: ${respostasTexto[i]}
-                </li>
-                <hr>
-              `).join('')
-            }
-          </ul>
           <p>
             <strong>Link para visualizar gráfico e detalhes:</strong><br/>
             <a href="${link}">${link}</a>
