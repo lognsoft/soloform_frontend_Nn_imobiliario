@@ -1,5 +1,6 @@
 const express    = require('express');
 const nodemailer = require('nodemailer');
+const cors = require('cors');
 const bodyParser = require('body-parser');
 const fs         = require('fs');
 const path       = require('path');
@@ -12,6 +13,9 @@ const dataPath = path.join(__dirname, 'data', 'mercado.json');
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json({ limit: '15mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// 1) Habilita CORS
+app.use(cors());
 
 // configuração de sessão
 app.use(session({
