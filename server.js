@@ -110,10 +110,11 @@ app.post('/submit-quiz', (req, res) => {
           <ul>
             ${
               perguntas.map((p, i) => `
-                <li>
+                <li style="list-style: "none">
                   <strong>${p.replace(/^\d+\.\\s*/, '')}</strong><br/>
                   Resposta: ${respostas[i]}
                 </li>
+                <hr>
               `).join('')
             }
           </ul>
@@ -342,7 +343,6 @@ res.send(`
             <li style="padding-bottom: 10px; list-style: none;">
               <strong>${p.replace(/^\d+\.\\s*/, '')}</strong><br/>
               ${respostasTexto[i]}
-
               <hr>
             </li>
           `).join('')
@@ -582,7 +582,7 @@ app.post('/reply/:id', (req, res) => {
   let html = `<h2>Resposta ao seu Quiz</h2><p>${reply}</p><hr/><h3>Seus Dados</h3><p><strong>Nome:</strong> ${user.nome}<br/><strong>E-mail:</strong> ${user.email}<br/><strong>Telefone:</strong> ${user.telefone}</p><h3>Suas Respostas</h3><ol>`;
   user.respostas.forEach((v,i) => {
     const txt = alternativasPorPergunta[i][v-1] || '—';
-    html += `<li><strong>${perguntas[i]}</strong><br/>${txt}</li>`;
+    html += `<li list-style ="none"><strong>${perguntas[i]}</strong><br/>${txt}</li><hr>`;
   });
   html += '</ol>';
   const attachments = [
