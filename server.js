@@ -166,16 +166,28 @@ app.get('/result/:id', checkAuth, (req, res) => {
   console.log(item);
 
   // calcula média de mercado
-  const todas = data.respostasMercado.map(u => u.respostas);
-  const count = todas.length;
-  const media = count
-    ? todas[0].map((_, i) => todas.reduce((s, a) => s + (a[i]||0), 0) / count)
-    : Array(item.respostas.length).fill(0);
+const todas = data.respostasMercado.map(u => u.respostas);
+const count = todas.length;
+const media = count
+  ? todas[0].map((_, i) =>
+      todas.reduce((s, a) =>
+        s + (typeof a[i] === 'number' ? a[i] : 0)
+      , 0) / count
+    )
+  : Array(item.respostas.length).fill(0);
 
-  // texto das respostas
-  const respostasTexto = item.respostas.map((v, i) =>
-    alternativasPorPergunta[i][v-1] || '—'
-  );
+const respostasTexto = item.respostas.map((v, i) => {
+  if (typeof v === 'number') {
+    return alternativasPorPergunta[i][v - 1] || '—';
+  } else if (typeof v === 'string') {
+    return v;
+  } else {
+    // qualquer outro caso
+    return '—';
+  }
+});
+
+  
 
   const isChecked = item.checked === true;
 
