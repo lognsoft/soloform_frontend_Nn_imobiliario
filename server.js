@@ -36,8 +36,8 @@ function checkAuth(req, res, next) {
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'webmaster@solopropaganda.com.br',
-    pass: 'vhjjqhowmmqsanly'
+    user: 'solopropaganda1@gmail.com',
+    pass: 'kumenevadohwdmwv'
   }
 });
 transporter.verify(err => {
@@ -71,7 +71,152 @@ const alternativasPorPergunta = [
   ['Gerar leads qualificados e com potencial real de compra','Comunicar valor e se destacar da concorrência','Ter uma régua de vendas com constância','Engajar os corretores de forma eficiente','Não saber por onde começar com a comunicação']
 ];
 
+// comentado.......
 // POST /submit-quiz
+// app.post('/submit-quiz', (req, res) => {
+//   const { nome, email, telefone, respostas } = req.body;
+//   if (!nome || !email || !telefone || !Array.isArray(respostas)) {
+//     return res.status(400).json({ error: 'Dados inválidos.' });
+//   }
+
+//   fs.readFile(dataPath, 'utf8', (err, content) => {
+//     if (err) return res.status(500).json({ error: 'Erro ao ler dados.' });
+//     let data;
+//     try { data = JSON.parse(content); }
+//     catch { return res.status(500).json({ error: 'JSON corrompido.' }); }
+
+//     const nextId = data.respostasMercado.reduce((m, x) => Math.max(m, x.id), 0) + 1;
+//     data.respostasMercado.push({
+//       id: nextId,
+//       nome,
+//       email,
+//       telefone,
+//       respostas,
+//       createdAt: new Date().toISOString(),
+//       checked: false
+//     });
+
+//     fs.writeFile(dataPath, JSON.stringify(data, null, 2), 'utf8', writeErr => {
+//       if (writeErr) return res.status(500).json({ error: 'Falha ao gravar.' });
+
+//       const link = `${req.protocol}://${req.get('host')}/result/${nextId}`;
+
+//       // 1) E-mail para o Bruno (com perguntas e respostas completas como texto)
+//       transporter.sendMail({
+//         from: 'solopropaganda1@gmail.com',
+//         to: 'solopropaganda1@gmail.com',
+//         cc: [
+//           'roger@solopropaganda.com.br',
+//           'mario@solopropaganda.com.br',
+//           'vinicius.vicente@solopropaganda.com.br'
+//         ],
+//         subject: `Novo envio de questionário (#${nextId})`,
+//         html: `
+//           <h2>Novo envio de questionário imobiliário (#${nextId})</h2>
+//           <p><strong>Nome:</strong> ${nome}</p>
+//           <p><strong>E-mail:</strong> ${email}</p>
+//           <p><strong>Telefone:</strong> ${telefone}</p>
+//           <p>
+//             <strong>Link para visualizar gráfico e detalhes:</strong><br/>
+//             <a href="${link}">${link}</a>
+//           </p>
+//         `
+//       }, errBruno => {
+//         if (errBruno) {
+//           console.error('Erro enviando e-mail para Bruno:', errBruno);
+//           return res.status(500).json({ error: 'Falha ao enviar e-mail interno.' });
+//         }
+
+//         // 2) E-mail de agradecimento ao cliente (sem alterações aqui)
+// //         transporter.sendMail({
+// //           from: 'webmaster@solopropaganda.com.br',
+// //           to: email,
+// //           subject: 'Obrigado pelo seu envio!',
+// //            html: `
+// //           <!DOCTYPE html>
+// // <html lang="pt-BR">
+// // <head>
+// //   <meta charset="UTF-8"/>
+// //   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+// //   <title>Confirmação de Recebimento</title>
+// // </head>
+// // <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+// //   <table
+// //     align="center"
+// //     width="100%"
+// //     cellpadding="0"
+// //     cellspacing="0"
+// //     style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; font-family: Arial, sans-serif;"
+// //   >
+// //     <!-- Header -->
+// //     <tr>
+// //       <td style="background-color: #ff820d; padding: 20px; text-align: center;">
+// //         <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Obrigado pelo contato!</h1>
+// //       </td>
+// //     </tr>
+
+// //     <!-- Body -->
+// //     <tr>
+// //       <td style="padding: 30px 20px; color: #333333;">
+// //         <h2 style="margin-top: 0; font-size: 20px;">Olá ${nome},</h2>
+// //         <p style="font-size: 16px; line-height: 1.5;">
+// //           Seu email foi recebido com sucesso. Nossa equipe já está analisando sua mensagem
+// //           e em breve retornaremos com mais informações.
+// //         </p>
+
+// //         <!-- Call-to-Action -->
+// //         <p style="text-align: center; margin: 30px 0;">
+// //           <a
+// //             href="https://www.solopropaganda.com.br"
+// //             style="display: inline-block; background-color: #ff820d; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-size: 16px;"
+// //           >
+// //             Acesse nosso site
+// //           </a>
+// //         </p>
+
+// //         <p style="font-size: 14px; color: #777777;">
+// //           Somos especialistas em saúde e bem-estar, combinando criatividade e dados para acelerar o crescimento de marcas e negócios.
+// //         </p>
+// //       </td>
+// //     </tr>
+
+// //     <!-- Footer -->
+// //     <tr>
+// //       <td style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 14px; color: #777777;">
+// //         <p style="margin: 0; font-weight: bold; color: #333333;">SOLO PROPAGANDA</p>
+// //         <p style="margin: 4px 0;">Wellness Ads Agency</p>
+// //         <p style="margin: 4px 0;">
+// //           Av. Cel. Silva Telles, 1002 | Conj 52, Campinas – SP
+// //         </p>
+// //         <p style="margin: 4px 0;">
+// //           Tel: +55 (19) 3255 1929 |
+// //           E-mail:
+// //           <a href="mailto:hello@solopropaganda.com.br" style="color: #0071BC; text-decoration: none;">
+// //             hello@solopropaganda.com.br
+// //           </a>
+// //         </p>
+// //         <p style="margin: 12px 0 0 0; font-size: 12px; color: #999999;">
+// //           ©2025 SOLO. Wellness Ads Agency. Todos os direitos reservados.
+// //         </p>
+// //       </td>
+// //     </tr>
+// //   </table>
+// // </body>
+// // </html>
+// //           `
+// //         }, errCliente => {
+// //           if (errCliente) {
+// //             console.error('Erro enviando e-mail ao cliente:', errCliente);
+// //             return res.status(500).json({ error: 'Falha ao enviar confirmação ao cliente.' });
+// //           }
+// //           res.json({ success: true, link });
+// //         });
+//       });
+//     });
+//   });
+// });
+
+
 app.post('/submit-quiz', (req, res) => {
   const { nome, email, telefone, respostas } = req.body;
   if (!nome || !email || !telefone || !Array.isArray(respostas)) {
@@ -86,13 +231,13 @@ app.post('/submit-quiz', (req, res) => {
 
     const nextId = data.respostasMercado.reduce((m, x) => Math.max(m, x.id), 0) + 1;
     data.respostasMercado.push({
-      id: nextId,
+      id:        nextId,
       nome,
       email,
       telefone,
       respostas,
       createdAt: new Date().toISOString(),
-      checked: false
+      checked:   false
     });
 
     fs.writeFile(dataPath, JSON.stringify(data, null, 2), 'utf8', writeErr => {
@@ -100,111 +245,29 @@ app.post('/submit-quiz', (req, res) => {
 
       const link = `${req.protocol}://${req.get('host')}/result/${nextId}`;
 
-      // 1) E-mail para o Bruno (com perguntas e respostas completas como texto)
+      // E-mail interno para Bruno
       transporter.sendMail({
-        from: 'webmaster@solopropaganda.com.br',
-        to: 'webmaster@solopropaganda.com.br',
+        from:    'solopropaganda1@gmail.com',
+        to:      'solopropaganda1@gmail.com',
+        cc:      [
+          'roger@solopropaganda.com.br',
+          'mario@solopropaganda.com.br',
+          'vinicius.vicente@solopropaganda.com.br'
+        ],
         subject: `Novo envio de questionário (#${nextId})`,
         html: `
           <h2>Novo envio de questionário imobiliário (#${nextId})</h2>
           <p><strong>Nome:</strong> ${nome}</p>
           <p><strong>E-mail:</strong> ${email}</p>
           <p><strong>Telefone:</strong> ${telefone}</p>
-          <p>
-            <strong>Link para visualizar gráfico e detalhes:</strong><br/>
-            <a href="${link}">${link}</a>
-          </p>
+          <p><strong>Link:</strong> <a href="${link}">${link}</a></p>
         `
       }, errBruno => {
         if (errBruno) {
-          console.error('Erro enviando e-mail para Bruno:', errBruno);
+          console.error('Erro e-mail interno:', errBruno);
           return res.status(500).json({ error: 'Falha ao enviar e-mail interno.' });
         }
-
-        // 2) E-mail de agradecimento ao cliente (sem alterações aqui)
-//         transporter.sendMail({
-//           from: 'webmaster@solopropaganda.com.br',
-//           to: email,
-//           subject: 'Obrigado pelo seu envio!',
-//            html: `
-//           <!DOCTYPE html>
-// <html lang="pt-BR">
-// <head>
-//   <meta charset="UTF-8"/>
-//   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-//   <title>Confirmação de Recebimento</title>
-// </head>
-// <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
-//   <table
-//     align="center"
-//     width="100%"
-//     cellpadding="0"
-//     cellspacing="0"
-//     style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; font-family: Arial, sans-serif;"
-//   >
-//     <!-- Header -->
-//     <tr>
-//       <td style="background-color: #ff820d; padding: 20px; text-align: center;">
-//         <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Obrigado pelo contato!</h1>
-//       </td>
-//     </tr>
-
-//     <!-- Body -->
-//     <tr>
-//       <td style="padding: 30px 20px; color: #333333;">
-//         <h2 style="margin-top: 0; font-size: 20px;">Olá ${nome},</h2>
-//         <p style="font-size: 16px; line-height: 1.5;">
-//           Seu email foi recebido com sucesso. Nossa equipe já está analisando sua mensagem
-//           e em breve retornaremos com mais informações.
-//         </p>
-
-//         <!-- Call-to-Action -->
-//         <p style="text-align: center; margin: 30px 0;">
-//           <a
-//             href="https://www.solopropaganda.com.br"
-//             style="display: inline-block; background-color: #ff820d; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-size: 16px;"
-//           >
-//             Acesse nosso site
-//           </a>
-//         </p>
-
-//         <p style="font-size: 14px; color: #777777;">
-//           Somos especialistas em saúde e bem-estar, combinando criatividade e dados para acelerar o crescimento de marcas e negócios.
-//         </p>
-//       </td>
-//     </tr>
-
-//     <!-- Footer -->
-//     <tr>
-//       <td style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 14px; color: #777777;">
-//         <p style="margin: 0; font-weight: bold; color: #333333;">SOLO PROPAGANDA</p>
-//         <p style="margin: 4px 0;">Wellness Ads Agency</p>
-//         <p style="margin: 4px 0;">
-//           Av. Cel. Silva Telles, 1002 | Conj 52, Campinas – SP
-//         </p>
-//         <p style="margin: 4px 0;">
-//           Tel: +55 (19) 3255 1929 |
-//           E-mail:
-//           <a href="mailto:hello@solopropaganda.com.br" style="color: #0071BC; text-decoration: none;">
-//             hello@solopropaganda.com.br
-//           </a>
-//         </p>
-//         <p style="margin: 12px 0 0 0; font-size: 12px; color: #999999;">
-//           ©2025 SOLO. Wellness Ads Agency. Todos os direitos reservados.
-//         </p>
-//       </td>
-//     </tr>
-//   </table>
-// </body>
-// </html>
-//           `
-//         }, errCliente => {
-//           if (errCliente) {
-//             console.error('Erro enviando e-mail ao cliente:', errCliente);
-//             return res.status(500).json({ error: 'Falha ao enviar confirmação ao cliente.' });
-//           }
-//           res.json({ success: true, link });
-//         });
+        res.json({ success: true, link });
       });
     });
   });
@@ -369,7 +432,7 @@ res.send(`
   <div id="replyModal">
     <div class="modal-content">
       <p>
-        <strong>De:</strong> webmaster@solopropaganda.com.br<br/>
+        <strong>De:</strong> solopropaganda1@gmail.com<br/>
         <strong>Para:</strong> ${item.email}
       </p>
       <div id="editor"></div>
@@ -577,92 +640,34 @@ app.post('/result/:id/check', checkAuth, (req, res) => {
 });
 
 // POST /reply/:id
-app.post('/submit-quiz', (req, res) => {
-  const { nome, email, telefone, respostas } = req.body;
-  if (!nome || !email || !telefone || !Array.isArray(respostas)) {
-    return res.status(400).json({ error: 'Dados inválidos.' });
-  }
-
-  fs.readFile(dataPath, 'utf8', (err, content) => {
-    if (err) return res.status(500).json({ error: 'Erro ao ler dados.' });
-    let data;
-    try { data = JSON.parse(content); }
-    catch { return res.status(500).json({ error: 'JSON corrompido.' }); }
-
-    const nextId = data.respostasMercado.reduce((m, x) => Math.max(m, x.id), 0) + 1;
-    data.respostasMercado.push({
-      id: nextId,
-      nome,
-      email,
-      telefone,
-      respostas,
-      createdAt: new Date().toISOString(),
-      checked: false
-    });
-
-    fs.writeFile(dataPath, JSON.stringify(data, null, 2), 'utf8', writeErr => {
-      if (writeErr) return res.status(500).json({ error: 'Falha ao gravar.' });
-
-      const link = `${req.protocol}://${req.get('host')}/result/${nextId}`;
-
-      // Converte respostas (índice ou texto) em texto legível
-      const respostasTexto = respostas.map((v, i) => {
-        if (typeof v === 'number')       return alternativasPorPergunta[i][v - 1] || '—';
-        else if (typeof v === 'string')  return v;
-        else                              return '—';
-      });
-
-      // 1) Envia o questionário completo para o e-mail preenchido pelo usuário
-      transporter.sendMail({
-        from:    'webmaster@solopropaganda.com.br',
-        to:      email,    // usa o e-mail que o usuário preencheu
-        subject: `Novo envio de questionário imobiliário (#${nextId})`,
-        html: `
-          <h2>Novo envio de questionário imobiliário (#${nextId})</h2>
-          <p><strong>Nome:</strong> ${nome}</p>
-          <p><strong>E-mail:</strong> ${email}</p>
-          <p><strong>Telefone:</strong> ${telefone}</p>
-          <h3>Perguntas e Respostas:</h3>
-          <ul>
-            ${
-              perguntas.map((p, i) => `
-                <li style="list-style:none">
-                  <strong>${p.replace(/^\d+\.\s*/, '')}</strong><br/>
-                  Resposta: ${respostasTexto[i]}
-                </li>
-                <hr>
-              `).join('')
-            }
-          </ul>
-          <p>
-            <strong>Link para visualizar gráfico e detalhes:</strong><br/>
-            <a href="${link}">${link}</a>
-          </p>
-        `
-      }, errEnvio => {
-        if (errEnvio) {
-          console.error('Erro enviando e-mail para o usuário:', errEnvio);
-          return res.status(500).json({ error: 'Falha ao enviar e-mail.' });
-        }
-
-        // 2) Mensagem de agradecimento (opcional)
-        transporter.sendMail({
-          from:    'webmaster@solopropaganda.com.br',
-          to:      email,
-          subject: 'Obrigado pelo seu envio!',
-          html: `
-            <h2>Olá ${nome},</h2>
-            <p>Obrigado pelo seu envio! Em breve entraremos em contato.</p>
-          `
-        }, errAck => {
-          if (errAck) {
-            console.error('Erro enviando confirmação ao cliente:', errAck);
-            return res.status(500).json({ error: 'Falha ao enviar confirmação.' });
-          }
-          res.json({ success: true, link });
-        });
-      });
-    });
+app.post('/reply/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const { reply, jpg, pdf } = req.body;
+  const data = JSON.parse(fs.readFileSync(dataPath,'utf8'));
+  const user = data.respostasMercado.find(u => u.id === id);
+  if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
+  let html = `<h2>Resposta ao seu Quiz</h2><p>${reply}</p><hr/><h3>Seus Dados</h3><p><strong>Nome:</strong> ${user.nome}<br/><strong>E-mail:</strong> ${user.email}<br/><strong>Telefone:</strong> ${user.telefone}</p><h3>Suas Respostas</h3><ol>`;
+  user.respostas.forEach((v,i) => {
+    const txt = alternativasPorPergunta[i][v-1] || '—';
+    html += `<li style="list-style: none"><strong>${perguntas[i]}</strong><br/>${txt}</li><hr>`;
+  });
+  html += '</li>';
+  const attachments = [
+    { filename: 'grafico.jpg', content: Buffer.from(jpg.split('base64,')[1], 'base64') },
+    { filename: 'grafico.pdf', content: Buffer.from(pdf.split('base64,')[1], 'base64') }
+  ];
+  transporter.sendMail({
+    from: 'brunobafilli@gmail.com',
+    to: user.email,
+    subject: 'Resposta ao seu Quiz',
+    html,
+    attachments
+  }, err => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Falha ao enviar e-mail.' });
+    }
+    res.json({ success: true });
   });
 });
 
