@@ -260,7 +260,8 @@ app.post('/submit-quiz', (req, res) => {
           <p><strong>Nome:</strong> ${nome}</p>
           <p><strong>E-mail:</strong> ${email}</p>
           <p><strong>Telefone:</strong> ${telefone}</p>
-          <p><strong>Link:</strong> <a href="${link}">${link}</a></p>
+          <hr>
+          <p><strong>Relatório:</strong> <a href="${link}">${link}</a></p>
         `
       }, errBruno => {
         if (errBruno) {
