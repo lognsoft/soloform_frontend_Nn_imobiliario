@@ -122,89 +122,89 @@ app.post('/submit-quiz', (req, res) => {
         }
 
         // 2) E-mail de agradecimento ao cliente (sem alterações aqui)
-        transporter.sendMail({
-          from: 'webmaster@solopropaganda.com.br',
-          to: email,
-          subject: 'Obrigado pelo seu envio!',
-           html: `
-          <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Confirmação de Recebimento</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f4;">
-  <table
-    align="center"
-    width="100%"
-    cellpadding="0"
-    cellspacing="0"
-    style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; font-family: Arial, sans-serif;"
-  >
-    <!-- Header -->
-    <tr>
-      <td style="background-color: #ff820d; padding: 20px; text-align: center;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Obrigado pelo contato!</h1>
-      </td>
-    </tr>
+//         transporter.sendMail({
+//           from: 'webmaster@solopropaganda.com.br',
+//           to: email,
+//           subject: 'Obrigado pelo seu envio!',
+//            html: `
+//           <!DOCTYPE html>
+// <html lang="pt-BR">
+// <head>
+//   <meta charset="UTF-8"/>
+//   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+//   <title>Confirmação de Recebimento</title>
+// </head>
+// <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+//   <table
+//     align="center"
+//     width="100%"
+//     cellpadding="0"
+//     cellspacing="0"
+//     style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; font-family: Arial, sans-serif;"
+//   >
+//     <!-- Header -->
+//     <tr>
+//       <td style="background-color: #ff820d; padding: 20px; text-align: center;">
+//         <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Obrigado pelo contato!</h1>
+//       </td>
+//     </tr>
 
-    <!-- Body -->
-    <tr>
-      <td style="padding: 30px 20px; color: #333333;">
-        <h2 style="margin-top: 0; font-size: 20px;">Olá ${nome},</h2>
-        <p style="font-size: 16px; line-height: 1.5;">
-          Seu email foi recebido com sucesso. Nossa equipe já está analisando sua mensagem
-          e em breve retornaremos com mais informações.
-        </p>
+//     <!-- Body -->
+//     <tr>
+//       <td style="padding: 30px 20px; color: #333333;">
+//         <h2 style="margin-top: 0; font-size: 20px;">Olá ${nome},</h2>
+//         <p style="font-size: 16px; line-height: 1.5;">
+//           Seu email foi recebido com sucesso. Nossa equipe já está analisando sua mensagem
+//           e em breve retornaremos com mais informações.
+//         </p>
 
-        <!-- Call-to-Action -->
-        <p style="text-align: center; margin: 30px 0;">
-          <a
-            href="https://www.solopropaganda.com.br"
-            style="display: inline-block; background-color: #ff820d; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-size: 16px;"
-          >
-            Acesse nosso site
-          </a>
-        </p>
+//         <!-- Call-to-Action -->
+//         <p style="text-align: center; margin: 30px 0;">
+//           <a
+//             href="https://www.solopropaganda.com.br"
+//             style="display: inline-block; background-color: #ff820d; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-size: 16px;"
+//           >
+//             Acesse nosso site
+//           </a>
+//         </p>
 
-        <p style="font-size: 14px; color: #777777;">
-          Somos especialistas em saúde e bem-estar, combinando criatividade e dados para acelerar o crescimento de marcas e negócios.
-        </p>
-      </td>
-    </tr>
+//         <p style="font-size: 14px; color: #777777;">
+//           Somos especialistas em saúde e bem-estar, combinando criatividade e dados para acelerar o crescimento de marcas e negócios.
+//         </p>
+//       </td>
+//     </tr>
 
-    <!-- Footer -->
-    <tr>
-      <td style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 14px; color: #777777;">
-        <p style="margin: 0; font-weight: bold; color: #333333;">SOLO PROPAGANDA</p>
-        <p style="margin: 4px 0;">Wellness Ads Agency</p>
-        <p style="margin: 4px 0;">
-          Av. Cel. Silva Telles, 1002 | Conj 52, Campinas – SP
-        </p>
-        <p style="margin: 4px 0;">
-          Tel: +55 (19) 3255 1929 |
-          E-mail:
-          <a href="mailto:hello@solopropaganda.com.br" style="color: #0071BC; text-decoration: none;">
-            hello@solopropaganda.com.br
-          </a>
-        </p>
-        <p style="margin: 12px 0 0 0; font-size: 12px; color: #999999;">
-          ©2025 SOLO. Wellness Ads Agency. Todos os direitos reservados.
-        </p>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-          `
-        }, errCliente => {
-          if (errCliente) {
-            console.error('Erro enviando e-mail ao cliente:', errCliente);
-            return res.status(500).json({ error: 'Falha ao enviar confirmação ao cliente.' });
-          }
-          res.json({ success: true, link });
-        });
+//     <!-- Footer -->
+//     <tr>
+//       <td style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 14px; color: #777777;">
+//         <p style="margin: 0; font-weight: bold; color: #333333;">SOLO PROPAGANDA</p>
+//         <p style="margin: 4px 0;">Wellness Ads Agency</p>
+//         <p style="margin: 4px 0;">
+//           Av. Cel. Silva Telles, 1002 | Conj 52, Campinas – SP
+//         </p>
+//         <p style="margin: 4px 0;">
+//           Tel: +55 (19) 3255 1929 |
+//           E-mail:
+//           <a href="mailto:hello@solopropaganda.com.br" style="color: #0071BC; text-decoration: none;">
+//             hello@solopropaganda.com.br
+//           </a>
+//         </p>
+//         <p style="margin: 12px 0 0 0; font-size: 12px; color: #999999;">
+//           ©2025 SOLO. Wellness Ads Agency. Todos os direitos reservados.
+//         </p>
+//       </td>
+//     </tr>
+//   </table>
+// </body>
+// </html>
+//           `
+//         }, errCliente => {
+//           if (errCliente) {
+//             console.error('Erro enviando e-mail ao cliente:', errCliente);
+//             return res.status(500).json({ error: 'Falha ao enviar confirmação ao cliente.' });
+//           }
+//           res.json({ success: true, link });
+//         });
       });
     });
   });
