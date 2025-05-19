@@ -1,4 +1,84 @@
 {
   "respostasMercado": [
+    {
+      "id": 1,
+      "nome": "teste",
+      "email": "teste@teste.com",
+      "telefone": "(10) 29340-2193",
+      "respostas": [
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "createdAt": "2025-05-19T14:58:01.038Z",
+      "checked": false
+    },
+    {
+      "id": 2,
+      "nome": "teste",
+      "email": "teste@teste.com",
+      "telefone": "(12) 30492-3049",
+      "respostas": [
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "createdAt": "2025-05-19T14:59:59.778Z",
+      "checked": false
+    },
+    {
+      "id": 3,
+      "nome": "teste",
+      "email": "teste@teste.com",
+      "telefone": "(02) 83943-2904",
+      "respostas": [
+        4,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "createdAt": "2025-05-19T15:00:26.668Z",
+      "checked": false
+    },
+    {
+      "id": 4,
+      "nome": "teste",
+      "email": "teste@teste.com",
+      "telefone": "(23) 09840-3294",
+      "respostas": [
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "createdAt": "2025-05-19T15:01:07.601Z",
+      "checked": false
+    }
   ]
 }

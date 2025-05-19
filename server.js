@@ -240,6 +240,8 @@ app.post('/submit-quiz', (req, res) => {
       checked:   false
     });
 
+    console.log(data.respostasMercado);
+
     fs.writeFile(dataPath, JSON.stringify(data, null, 2), 'utf8', writeErr => {
       if (writeErr) return res.status(500).json({ error: 'Falha ao gravar.' });
 
