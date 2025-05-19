@@ -250,7 +250,7 @@ app.post('/submit-quiz', (req, res) => {
         from:    'solopropaganda1@gmail.com',
         to:      'solopropaganda1@gmail.com',
         cc:      [
-          'roger@solopropaganda.com.br',
+          'rogerio@solopropaganda.com.br',
           'mario@solopropaganda.com.br',
           'vinicius.vicente@solopropaganda.com.br'
         ],
