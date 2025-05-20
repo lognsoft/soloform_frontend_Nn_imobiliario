@@ -334,25 +334,16 @@ res.send(`
   <style>
     body, html { margin:0; height:100%; font-family:sans-serif; position:relative; }
     .back-btn {
-      top:1rem;
-      left:1rem;
-      background:#6c757d;
-      color:#fff;
-      border:none;
-      padding:.5rem 1rem;
-      border-radius:4px;
-      cursor:pointer;
-      font-size:1rem;
+      top:1rem; left:1rem; background:#6c757d; color:#fff;
+      border:none; padding:.5rem 1rem; border-radius:4px;
+      cursor:pointer; font-size:1rem;
     }
-    .attended {
-      position:absolute; top:1rem; right:1rem;
-      font-size:1rem;
-    }
+    .attended { position:absolute; top:1rem; right:1rem; font-size:1rem; }
     .container { display:flex; height:100%; }
     .left {
       width:30%; min-width:280px; padding:1rem;
       overflow-y:auto; background:#f7f7f7;
-      font-size:0.9rem; position:relative;
+      font-size:.9rem; position:relative;
     }
     .right {
       flex:1; display:flex; flex-direction:column;
@@ -377,12 +368,8 @@ res.send(`
       width:90%; max-width:500px;
     }
     #editor { height:200px; background:#fff; }
-    .modal-content .actions {
-      text-align:right; margin-top:1rem;
-    }
-    .modal-content .actions button {
-      margin-left:.5rem;
-    }
+    .modal-content .actions { text-align:right; margin-top:1rem; }
+    .modal-content .actions button { margin-left:.5rem; }
     #replySpinner { display:none; text-align:center; margin-top:1rem; }
   </style>
 </head>
@@ -397,7 +384,6 @@ res.send(`
 
   <div class="container">
     <div class="left">
-      <!-- Atualizado: navega para /admin em vez de history.back() -->
       <button class="back-btn" onclick="window.location.href = window.location.origin + '/admin'">← Voltar</button>
       <h3>Seus Dados</h3>
       <p>
@@ -410,7 +396,7 @@ res.send(`
       <ol style="padding-left:15px">
         ${
           perguntas.map((p, i) => `
-            <li style="padding-bottom: 10px; list-style: none;">
+            <li style="padding-bottom:10px; list-style:none">
               <strong>${p.replace(/^\d+\.\\s*/, '')}</strong><br/>
               ${respostasTexto[i]}
               <hr>
@@ -425,8 +411,8 @@ res.send(`
         <canvas id="myChart"></canvas>
       </div>
       <div class="buttons">
-        <button id="downloadJpg">Baixar JPG</button>
-        <button id="downloadPdf">Baixar PDF</button>
+        <button id="downloadJpg">Baixar JPG com dados</button>
+        <button id="downloadPdf">Baixar PDF com dados</button>
         <button id="btnReply">Enviar Resposta</button>
       </div>
     </div>
@@ -461,6 +447,12 @@ res.send(`
   </div>
 
   <script>
+    // dados do usuário e das respostas para exportar e tooltips
+    const userName       = ${JSON.stringify(item.nome)};
+    const userEmail      = ${JSON.stringify(item.email)};
+    const userPhone      = ${JSON.stringify(item.telefone)};
+    const respostasTextoJS = ${JSON.stringify(respostasTexto)};
+
     // plugin para fundo branco no Chart.js
     const bgWhite = {
       id: 'bg_white',
@@ -491,16 +483,39 @@ res.send(`
     const labels     = rawLabels.map(l => wrapLabel(l, 25));
     const ideal      = Array(labels.length).fill(5);
 
-    // configura o radar chart
+    // configura o radar chart com tooltip mostrando a resposta
     const ctxChart = document.getElementById('myChart').getContext('2d');
     new Chart(ctxChart, {
       type: 'radar',
       data: {
         labels,
         datasets: [
-          { label: 'Média Mercado', data: mediaData, borderWidth: 3, borderDash: [5,5] },
-          { label: 'Ideal (5)', data: ideal, borderWidth: 2, borderDash: [7,3] },
-          { label: 'Meus Dados', data: responses, borderWidth: 3 }
+          {
+            label: 'Meus Dados',
+            data: responses,
+            borderColor: '#E69F00',
+            backgroundColor: 'rgba(230,159,0,0.2)',
+            borderWidth: 3,
+            fill: true
+          },
+          {
+            label: 'Média Mercado',
+            data: mediaData,
+            borderColor: '#009E73',
+            backgroundColor: 'rgba(0,158,115,0.2)',
+            borderWidth: 3,
+            borderDash: [5,5],
+            fill: true
+          },
+          {
+            label: 'Ideal (5)',
+            data: ideal,
+            borderColor: '#56B4E9',
+            backgroundColor: 'rgba(86,180,233,0.2)',
+            borderWidth: 2,
+            borderDash: [7,3],
+            fill: true
+          }
         ]
       },
       options: {
@@ -516,8 +531,19 @@ res.send(`
         },
         plugins: {
           bg_white: {},
+          tooltip: {
+            callbacks: {
+              title: function(context) {
+                const idx = context[0].dataIndex;
+                return respostasTextoJS[idx];
+              },
+              label: function(context) {
+                return context.dataset.label + ': ' + context.formattedValue;
+              }
+            }
+          },
           legend: { position: 'top', labels: { font: { size: 14 } } },
-          title: { display: true, text: 'Comparativo', font: { size: 18 } }
+          title: { display: true, text: 'Diagnóstico Solo Mercado Imobiliário', font: { size: 18 } }
         }
       },
       plugins: [ bgWhite ]
@@ -525,91 +551,94 @@ res.send(`
 
     const canvas = document.getElementById('myChart');
 
-    // download JPG
+    // download JPG com os dados do usuário no lado direito, texto alinhado à esquerda
     document.getElementById('downloadJpg').onclick = () => {
-      const a = document.createElement('a');
-      a.href     = canvas.toDataURL('image/jpeg', 1.0);
-      a.download = 'grafico.jpg';
-      a.click();
+      const headerHeight = 80;
+      const tmpCanvas = document.createElement('canvas');
+      tmpCanvas.width  = canvas.width;
+      tmpCanvas.height = canvas.height + headerHeight;
+      const ctx2 = tmpCanvas.getContext('2d');
+
+      // fundo branco
+      ctx2.fillStyle = '#fff';
+      ctx2.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+
+      // configura posição X para região direita
+      const textX = tmpCanvas.width - 250;
+      ctx2.textAlign = 'left';
+      ctx2.fillStyle = '#000';
+      ctx2.font = 'bold 14px sans-serif';
+      ctx2.fillText(\`Nome: \${userName}\`, textX, 20);
+      ctx2.fillText(\`E-mail: \${userEmail}\`, textX, 40);
+      ctx2.fillText(\`Telefone: \${userPhone}\`, textX, 60);
+
+      // insere o gráfico
+      const img = new Image();
+      img.onload = () => {
+        ctx2.drawImage(img, 0, headerHeight, canvas.width, canvas.height);
+        const a = document.createElement('a');
+        a.href = tmpCanvas.toDataURL('image/jpeg', 1.0);
+        a.download = 'grafico_com_dados.jpg';
+        a.click();
+      };
+      img.src = canvas.toDataURL('image/png');
     };
 
-    // download PDF
+    // download PDF com os dados do usuário
     document.getElementById('downloadPdf').onclick = () => {
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({
-        orientation:'landscape',
-        unit:'px',
-        format:[canvas.width, canvas.height]
+        orientation: 'landscape',
+        unit: 'px',
+        format: [canvas.width, canvas.height + 80]
       });
-      pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,canvas.width,canvas.height);
-      pdf.save('grafico.pdf');
+
+      const textX = canvas.width - 250;
+      pdf.setFontSize(12);
+      pdf.text(\`Nome: \${userName}\`, textX, 20);
+      pdf.text(\`E-mail: \${userEmail}\`, textX, 35);
+      pdf.text(\`Telefone: \${userPhone}\`, textX, 50);
+
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 80, canvas.width, canvas.height);
+      pdf.save('grafico_com_dados.pdf');
     };
 
-    // inicializa o Quill
-    const quill = new Quill('#editor', {
-      theme:'snow',
-      modules:{ toolbar:[['bold','italic','underline'], [{ list:'bullet' },{ list:'ordered' }], ['link']] }
-    });
-
-    // abre/fecha modal
+    // restante do código (Quill, modal, envio, checkbox) continua igual...
+    const quill = new Quill('#editor', { theme: 'snow', modules: { toolbar:[['bold','italic','underline'], [{ list:'bullet' },{ list:'ordered' }], ['link']] } });
     document.getElementById('btnReply').onclick    = () => document.getElementById('replyModal').style.display = 'flex';
     document.getElementById('cancelReply').onclick = () => document.getElementById('replyModal').style.display = 'none';
-
-    // envia a resposta
-    document.getElementById('sendReply').onclick = async () => {
+    document.getElementById('sendReply').onclick   = async () => {
       const btnSend   = document.getElementById('sendReply');
       const btnCancel = document.getElementById('cancelReply');
       const spinner   = document.getElementById('replySpinner');
-
-      if (!quill.getText().trim()) {
-        return alert('Digite uma mensagem.');
-      }
-
-      quill.enable(false);
-      btnSend.disabled   = true;
-      btnCancel.disabled = true;
-      spinner.style.display = 'block';
-
+      if (!quill.getText().trim()) return alert('Digite uma mensagem.');
+      quill.enable(false); btnSend.disabled = true; btnCancel.disabled = true; spinner.style.display = 'block';
       const replyHtml = quill.root.innerHTML;
       const jpg       = canvas.toDataURL('image/jpeg', 1.0);
       const { jsPDF } = window.jspdf;
-      const pdfDoc    = new jsPDF({
-        orientation:'landscape',
-        unit:'px',
-        format:[canvas.width, canvas.height]
-      });
+      const pdfDoc    = new jsPDF({ orientation:'landscape', unit:'px', format:[canvas.width, canvas.height] });
       pdfDoc.addImage(canvas.toDataURL('image/png'),'PNG',0,0,canvas.width,canvas.height);
       const pdfData   = pdfDoc.output('datauristring');
-
       try {
         const res = await fetch(\`/reply/${item.id}\`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reply: replyHtml, jpg, pdf: pdfData }),
-          credentials: 'include'
+          method:'POST', headers:{ 'Content-Type':'application/json' },
+          body:JSON.stringify({ reply:replyHtml, jpg, pdf:pdfData }),
+          credentials:'include'
         });
         if (!res.ok) throw new Error('Envio falhou');
         alert('Resposta enviada com sucesso!');
         document.getElementById('replyModal').style.display = 'none';
-      } catch (err) {
+      } catch {
         alert('Erro ao enviar resposta.');
-        console.error(err);
       } finally {
-        spinner.style.display   = 'none';
-        btnSend.disabled       = false;
-        btnCancel.disabled     = false;
-        quill.enable(true);
+        spinner.style.display = 'none'; btnSend.disabled = false; btnCancel.disabled = false; quill.enable(true);
       }
     };
-
-    // handler do checkbox de atendimento
-    document.getElementById('attendedCheckbox').addEventListener('change', async (e) => {
+    document.getElementById('attendedCheckbox').addEventListener('change', async e => {
       try {
         const res = await fetch(\`/result/${item.id}/check\`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ checked: e.target.checked }),
-          credentials: 'include'
+          method:'POST', headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ checked: e.target.checked }), credentials:'include'
         });
         if (!res.ok) throw new Error();
       } catch {
@@ -621,6 +650,14 @@ res.send(`
 </body>
 </html>
 `);
+
+
+
+
+
+
+
+
 });
 
 // POST /result/:id/check
