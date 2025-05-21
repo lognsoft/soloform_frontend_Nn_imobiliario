@@ -578,7 +578,7 @@ res.send(`
         ctx2.drawImage(img, 0, headerHeight, canvas.width, canvas.height);
         const a = document.createElement('a');
         a.href = tmpCanvas.toDataURL('image/jpeg', 1.0);
-        a.download = 'grafico_com_dados.jpg';
+        a.download = 'Diagnostico_Solo_Mercado_Imobiliario_${item.nome}.jpg';
         a.click();
       };
       img.src = canvas.toDataURL('image/png');
@@ -601,7 +601,7 @@ res.send(`
       pdf.text(\`Telefone: \${userPhone}\`, textX, 50, { align: 'right' });
 
       pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 80, canvas.width, canvas.height);
-      pdf.save('grafico_com_dados.pdf');
+      pdf.save('Diagnostico_Solo_Mercado_Imobiliario_${item.nome}.pdf');
     };
 
 
