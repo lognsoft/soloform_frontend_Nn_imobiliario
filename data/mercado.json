@@ -18,7 +18,7 @@
         5
       ],
       "createdAt": "2025-05-19T14:58:01.038Z",
-      "checked": false
+      "checked": true
     },
     {
       "id": 2,
@@ -58,7 +58,7 @@
         5
       ],
       "createdAt": "2025-05-19T15:00:26.668Z",
-      "checked": false
+      "checked": true
     },
     {
       "id": 4,
@@ -78,7 +78,7 @@
         5
       ],
       "createdAt": "2025-05-19T15:01:07.601Z",
-      "checked": false
+      "checked": true
     }
   ]
 }

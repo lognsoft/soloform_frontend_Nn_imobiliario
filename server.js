@@ -285,37 +285,37 @@ app.get('/result/:id', checkAuth, (req, res) => {
   const item    = data.respostasMercado.find(u => u.id === id);
   if (!item) return res.status(404).send('Resultado não encontrado.');
 
-
-  console.log(item);
-
   // calcula média de mercado
-const todas = data.respostasMercado.map(u => u.respostas);
-const count = todas.length;
-const media = count
-  ? todas[0].map((_, i) =>
-      todas.reduce((s, a) =>
-        s + (typeof a[i] === 'number' ? a[i] : 0)
-      , 0) / count
-    )
-  : Array(item.respostas.length).fill(0);
+  const todas = data.respostasMercado.map(u => u.respostas);
+  const count = todas.length;
+  const media = count
+    ? todas[0].map((_, i) =>
+        todas.reduce((s, a) =>
+          s + (typeof a[i] === 'number' ? a[i] : 0)
+        , 0) / count
+      )
+    : Array(item.respostas.length).fill(0);
 
-const respostasTexto = item.respostas.map((v, i) => {
-  if (typeof v === 'number') {
-    return alternativasPorPergunta[i][v - 1] || '—';
-  } else if (typeof v === 'string') {
-    return v;
-  } else {
-    // qualquer outro caso
-    return '—';
-  }
-});
-
-  
+  // converte respostas em texto
+  const respostasTexto = item.respostas.map((v, i) => {
+    if (typeof v === 'number') {
+      return alternativasPorPergunta[i][v - 1] || '—';
+    } else if (typeof v === 'string') {
+      return v;
+    } else {
+      return '—';
+    }
+  });
 
   const isChecked = item.checked === true;
 
-  
-res.send(`
+  // prepara variáveis para injetar no template
+  const perguntasJSON       = JSON.stringify(perguntas);
+  const respostasJSON       = JSON.stringify(item.respostas);
+  const respostasTextoJSON  = JSON.stringify(respostasTexto);
+  const mediaJSON           = JSON.stringify(media.map(v => +v.toFixed(1)));
+
+  res.send(`
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -447,13 +447,13 @@ res.send(`
   </div>
 
   <script>
-    // dados do usuário e das respostas para exportar e tooltips
-    const userName       = ${JSON.stringify(item.nome)};
-    const userEmail      = ${JSON.stringify(item.email)};
-    const userPhone      = ${JSON.stringify(item.telefone)};
-    const respostasTextoJS = ${JSON.stringify(respostasTexto)};
+    // dados para Chart.js, export e tooltips
+    const perguntasJSON     = ${perguntasJSON};
+    const responses         = ${respostasJSON};
+    const respostasTextoJS  = ${respostasTextoJSON};
+    const mediaData         = ${mediaJSON};
 
-    // plugin para fundo branco no Chart.js
+    // plugin de fundo branco
     const bgWhite = {
       id: 'bg_white',
       beforeDraw(chart) {
@@ -466,7 +466,7 @@ res.send(`
       }
     };
 
-    // quebra de linha em labels longas
+    // wrap labels longas
     function wrapLabel(text, maxLen) {
       const words = text.split(' '), lines = [''];
       words.forEach(w => {
@@ -477,167 +477,117 @@ res.send(`
       return lines;
     }
 
-    const rawLabels = ${JSON.stringify(perguntas)};
-    const responses = ${JSON.stringify(item.respostas)};
-    const mediaData  = ${JSON.stringify(media.map(v => +v.toFixed(1)))};
-    const labels     = rawLabels.map(l => wrapLabel(l, 25));
-    const ideal      = Array(labels.length).fill(5);
+    const labels = perguntasJSON.map(l => wrapLabel(l, 25));
+    const ideal  = Array(labels.length).fill(5);
 
-    // configura o radar chart com tooltip mostrando a resposta
-    const ctxChart = document.getElementById('myChart').getContext('2d');
-    new Chart(ctxChart, {
+    // inicializa Chart.js
+    const ctx = document.getElementById('myChart').getContext('2d');
+    new Chart(ctx, {
       type: 'radar',
       data: {
         labels,
         datasets: [
-          {
-            label: 'Meus Dados',
-            data: responses,
-            borderColor: '#E69F00',
-            backgroundColor: 'rgba(230,159,0,0.2)',
-            borderWidth: 3,
-            fill: true
-          },
-          {
-            label: 'Média Mercado',
-            data: mediaData,
-            borderColor: '#009E73',
-            backgroundColor: 'rgba(0,158,115,0.2)',
-            borderWidth: 3,
-            borderDash: [5,5],
-            fill: true
-          },
-          {
-            label: 'Ideal (5)',
-            data: ideal,
-            borderColor: '#56B4E9',
-            backgroundColor: 'rgba(86,180,233,0.2)',
-            borderWidth: 2,
-            borderDash: [7,3],
-            fill: true
-          }
+          { label: 'Meus Dados',      data: responses, borderColor: '#E69F00', backgroundColor: 'rgba(230,159,0,0.2)', borderWidth:3, fill:true },
+          { label: 'Média Mercado',   data: mediaData, borderColor: '#009E73', backgroundColor: 'rgba(0,158,115,0.2)', borderWidth:3, borderDash:[5,5], fill:true },
+          { label: 'Ideal (5)',       data: ideal,     borderColor: '#56B4E9', backgroundColor: 'rgba(86,180,233,0.2)', borderWidth:2, borderDash:[7,3], fill:true }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        scales: {
-          r: {
-            min: 1,
-            max: 5,
-            ticks: { stepSize: 1, font: { size: 14 } },
-            pointLabels: { font: { size: 12 }, padding: 10 }
-          }
-        },
+        scales: { r: { min:1, max:5, ticks:{ stepSize:1, font:{ size:14 } }, pointLabels:{ font:{ size:12 }, padding:10 } } },
         plugins: {
           bg_white: {},
           tooltip: {
             callbacks: {
-              title: function(context) {
-                return respostasTextoJS[context[0].dataIndex];
-              },
-              label: function(context) {
-                return context.dataset.label + ': ' + context.formattedValue;
-              }
+              title: ctx => respostasTextoJS[ctx[0].dataIndex],
+              label: ctx => ctx.dataset.label + ': ' + ctx.formattedValue
             }
           },
-          legend: { position: 'top', labels: { font: { size: 14 } } },
-          title: { display: true, text: 'Diagnóstico Solo Mercado Imobiliário', font: { size: 18 } }
+          legend: { position:'top', labels:{ font:{ size:14 } } },
+          title:  { display:true, text:'Diagnóstico Solo Mercado Imobiliário', font:{ size:18 } }
         }
       },
-      plugins: [ bgWhite ]
+      plugins:[ bgWhite ]
     });
 
-    const canvas = document.getElementById('myChart');
+    // download JPG e PDF (seu código existente)
+    // ...
 
-    // download JPG com os dados alinhados à direita
-    document.getElementById('downloadJpg').onclick = () => {
-      const headerHeight = 80;
-      const tmpCanvas = document.createElement('canvas');
-      tmpCanvas.width  = canvas.width;
-      tmpCanvas.height = canvas.height + headerHeight;
-      const ctx2 = tmpCanvas.getContext('2d');
-
-      // fundo branco
-      ctx2.fillStyle = '#fff';
-      ctx2.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
-
-      // margem direita
-      const margin = 20;
-      const textX = tmpCanvas.width - margin;
-      ctx2.textAlign = 'right';
-      ctx2.fillStyle = '#000';
-      ctx2.font = 'bold 14px sans-serif';
-      ctx2.fillText(\`Nome: \${userName}\`,   textX, 20);
-      ctx2.fillText(\`E-mail: \${userEmail}\`, textX, 40);
-      ctx2.fillText(\`Telefone: \${userPhone}\`, textX, 60);
-
-      // insere o gráfico
-      const img = new Image();
-      img.onload = () => {
-        ctx2.drawImage(img, 0, headerHeight, canvas.width, canvas.height);
-        const a = document.createElement('a');
-        a.href = tmpCanvas.toDataURL('image/jpeg', 1.0);
-        a.download = 'grafico_com_dados.jpg';
-        a.click();
-      };
-      img.src = canvas.toDataURL('image/png');
-    };
-
-    // download PDF com os dados alinhados à direita
-    document.getElementById('downloadPdf').onclick = () => {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'px',
-        format: [canvas.width, canvas.height + 80]
-      });
-
-      const margin = 20;
-      const textX = canvas.width - margin;
-      pdf.setFontSize(12);
-      pdf.text(\`Nome: \${userName}\`,    textX, 20, { align: 'right' });
-      pdf.text(\`E-mail: \${userEmail}\`, textX, 35, { align: 'right' });
-      pdf.text(\`Telefone: \${userPhone}\`, textX, 50, { align: 'right' });
-
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 80, canvas.width, canvas.height);
-      pdf.save('grafico_com_dados.pdf');
-    };
-
-    // restante do código (Quill, modal, envio, checkbox) continua igual…
   </script>
+
+  <!-- Listener do checkbox "Cliente atendido" -->
+  <script>
+    const checkbox = document.getElementById('attendedCheckbox');
+    checkbox.addEventListener('change', () => {
+      fetch('/result/${id}/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checked: checkbox.checked })
+      })
+      .then(res => res.json())
+      .then(json => {
+        if (!json.success) {
+          alert('Erro ao atualizar status.');
+          checkbox.checked = !checkbox.checked;
+        }
+      })
+      .catch(() => {
+        alert('Falha de comunicação.');
+        checkbox.checked = !checkbox.checked;
+      });
+    });
+  </script>
+
 </body>
 </html>
 `);
-
-
-
-
-
-
-
-
-
 });
 
+
+// POST /result/:id/check
 // POST /result/:id/check
 app.post('/result/:id/check', checkAuth, (req, res) => {
-  const id = Number(req.params.id);
-  const { checked } = req.body;
+  const id = parseInt(req.params.id, 10);
+
+  // Extrai e normaliza o valor de checked:
+  // aceita true (boolean), "true", "on" ou "1" como marcado
+  const raw = req.body.checked;
+  const isChecked = raw === true ||
+                    raw === 'true' ||
+                    raw === 'on' ||
+                    raw === '1';
+
   fs.readFile(dataPath, 'utf8', (err, content) => {
-    if (err) return res.status(500).json({ error: 'Erro ao ler dados.' });
+    if (err) {
+      return res.status(500).json({ error: 'Erro ao ler dados.' });
+    }
+
     let data;
-    try { data = JSON.parse(content); }
-    catch { return res.status(500).json({ error: 'JSON inválido.' }); }
-    const record = data.respostasMercado.find(u => u.id === id);
-    if (!record) return res.status(404).json({ error: 'Registro não encontrado.' });
-    record.checked = !!checked;
+    try {
+      data = JSON.parse(content);
+    } catch {
+      return res.status(500).json({ error: 'JSON inválido.' });
+    }
+
+    const item = data.respostasMercado.find(u => u.id === id);
+    if (!item) {
+      return res.status(404).json({ error: 'Registro não encontrado.' });
+    }
+
+    // Atualiza o campo checked
+    item.checked = isChecked;
+
     fs.writeFile(dataPath, JSON.stringify(data, null, 2), 'utf8', writeErr => {
-      if (writeErr) return res.status(500).json({ error: 'Falha ao gravar.' });
-      res.json({ success: true });
+      if (writeErr) {
+        return res.status(500).json({ error: 'Falha ao gravar.' });
+      }
+      // Retorna o novo estado
+      res.json({ success: true, checked: item.checked });
     });
   });
 });
+
 
 // POST /reply/:id
 app.post('/reply/:id', (req, res) => {
@@ -734,6 +684,8 @@ app.get('/api/users', checkAuth, (req, res) => {
 
 // formulário de login
 app.get('/admin/login', (req, res) => {
+
+
   res.send(`
     <!DOCTYPE html>
     <html lang="pt-BR">
@@ -816,6 +768,9 @@ app.get('/admin/login', (req, res) => {
     </body>
     </html>
   `);
+
+
+
 });
 
 // validação de credenciais
