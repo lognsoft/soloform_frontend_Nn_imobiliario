@@ -59,17 +59,18 @@ const perguntas = [
   '10. Qual a sua maior preocupação para o lançamento?'
 ];
 const alternativasPorPergunta = [
-  ['Sim, com diferenciais claros e um território de marca sólido','Não sei o que seria um posicionamento estratégico','Ainda não pensamos nisso','Estamos em processo de construção do posicionamento','Temos uma ideia, mas não formalizamos ainda'],
-  ['Sim, com identidade visual e narrativa de marca alinhadas','Temos uma proposta visual, mas sem estratégia por trás','Estamos iniciando o desenvolvimento','Ainda não tratamos disso','Outra opção'],
-  ['Sim, com canais e cronograma definidos para todas as fases','Temos uma ideia dos canais que usaremos','Estamos em fase de orçamentos e cotações','Ainda não começamos a planejar a mídia','Pretendemos resolver isso “mais perto” do lançamento'],
-  ['Sim, temos uma estratégia clara de captação de leads','Pensamos em fazer campanhas digitais','Vamos depender dos corretores ou imobiliárias','Ainda estamos avaliando possibilidades','Não sabemos exatamente como funciona isso'],
-  ['Sim, com ações pensadas para cada momento da jornada','Ainda estamos construindo essa régua de comunicação','Pretendemos focar mais no impacto inicial','Não estamos pensando no funil, mas apenas em “vender”','Não sabemos como estruturar isso'],
-  ['Sim, com book, apresentações, roteiros e apoio digital','Temos apenas tabela e planta','Estamos desenvolvendo o kit comercial ainda','Vamos deixar com as imobiliárias','Ainda não pensamos nessa etapa'],
-  ['Sim, com campanhas de incentivo, eventos e comissões agressivas','Vamos fazer um meeting ou evento de lançamento','Vamos contar com o relacionamento de praxe','Ainda não pensamos em ações específicas','Não sei se isso é relevante nessa fase'],
-  ['Sim, vamos destacar atributos como localização, conceito, diferenciais construtivos','Pretendemos trabalhar os benefícios, mas o preço será o foco','Ainda estamos formatando essa proposta de valor','Não pensamos nisso como prioridade','Acreditamos que o preço por si só venderá'],
-  ['Já estruturamos a campanha de pré-marketing e teasers','Vamos trabalhar redes sociais e lista de espera','Estamos pensando em mídia só para o lançamento','Ainda não definimos essa etapa','Não achamos necessário divulgar antes de lançar'],
-  ['Gerar leads qualificados e com potencial real de compra','Comunicar valor e se destacar da concorrência','Ter uma régua de vendas com constância','Engajar os corretores de forma eficiente','Não saber por onde começar com a comunicação']
+  ['Não sei o que seria um posicionamento estratégico','Ainda não pensamos nisso','Estamos em processo de construção do posicionamento','Temos uma ideia, mas não formalizamos ainda','Sim, com diferenciais claros e um território de marca sólido'],
+  ['Ainda não tratamos disso','Outra opção','Estamos iniciando o desenvolvimento','Temos uma proposta visual, mas sem estratégia por trás','Sim, com identidade visual e narrativa de marca alinhadas'],
+  ['Pretendemos resolver isso “mais perto” do lançamento','Ainda não começamos a planejar a mídia','Estamos em fase de orçamentos e cotações','Temos uma ideia dos canais que usaremos','Sim, com canais e cronograma definidos para todas as fases'],
+  ['Não sabemos exatamente como funciona isso','Ainda estamos avaliando possibilidades','Vamos depender dos corretores ou imobiliárias','Pensamos em fazer campanhas digitais','Sim, temos uma estratégia clara de captação de leads'],
+  ['Não sabemos como estruturar isso','Não estamos pensando no funil, mas apenas em “vender”','Pretendemos focar mais no impacto inicial','Ainda estamos construindo essa régua de comunicação','Sim, com ações pensadas para cada momento da jornada'],
+  ['Ainda não pensamos nessa etapa','Vamos deixar com as imobiliárias','Estamos desenvolvendo o kit comercial ainda','Temos apenas tabela e planta','Sim, com book, apresentações, roteiros e apoio digital'],
+  ['Não sei se isso é relevante nessa fase','Ainda não pensamos em ações específicas','Vamos contar com o relacionamento de praxe','Vamos fazer um meeting ou evento de lançamento','Sim, com campanhas de incentivo, eventos e comissões agressivas'],
+  ['Acreditamos que o preço por si só venderá','Não pensamos nisso como prioridade','Ainda estamos formatando essa proposta de valor','Pretendemos trabalhar os benefícios, mas o preço será o foco','Sim, vamos destacar atributos como localização, conceito, diferenciais construtivos'],
+  ['Não achamos necessário divulgar antes de lançar','Ainda não definimos essa etapa','Estamos pensando em mídia só para o lançamento','Vamos trabalhar redes sociais e lista de espera','Já estruturamos a campanha de pré-marketing e teasers'],
+  ['Não saber por onde começar com a comunicação','Engajar os corretores de forma eficiente','Ter uma régua de vendas com constância','Comunicar valor e se destacar da concorrência','Gerar leads qualificados e com potencial real de compra']
 ];
+
 
 // comentado.......
 // POST /submit-quiz
