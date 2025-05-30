@@ -278,44 +278,42 @@ app.post('/submit-quiz', (req, res) => {
 
 
 // GET /result/:id
+// Dentro de server.js
+
+// GET /result/:id
 app.get('/result/:id', checkAuth, (req, res) => {
-  const id = Number(req.params.id);
+  const id      = Number(req.params.id);
   const content = fs.readFileSync(dataPath, 'utf8');
   const data    = JSON.parse(content);
-  const item    = data.respostasMercado.find(u => u.id === id);
+  const respostasMercado = data.respostasMercado;
+  const item    = respostasMercado.find(u => u.id === id);
   if (!item) return res.status(404).send('Resultado não encontrado.');
 
+  // calcula média de mercado (caso ainda queira usar)
+  const todas = respostasMercado.map(u => u.respostas);
+  const count = todas.length;
+  const media = count
+    ? todas[0].map((_, i) =>
+        todas.reduce((s, a) =>
+          s + (typeof a[i] === 'number' ? a[i] : 0)
+        , 0) / count
+      )
+    : Array(item.respostas.length).fill(0);
 
-  console.log(item);
-
-  // calcula média de mercado
-const todas = data.respostasMercado.map(u => u.respostas);
-const count = todas.length;
-const media = count
-  ? todas[0].map((_, i) =>
-      todas.reduce((s, a) =>
-        s + (typeof a[i] === 'number' ? a[i] : 0)
-      , 0) / count
-    )
-  : Array(item.respostas.length).fill(0);
-
-const respostasTexto = item.respostas.map((v, i) => {
-  if (typeof v === 'number') {
-    return alternativasPorPergunta[i][v - 1] || '—';
-  } else if (typeof v === 'string') {
-    return v;
-  } else {
-    // qualquer outro caso
+  // converte respostas do usuário para texto
+  const respostasTexto = item.respostas.map((v, i) => {
+    if (typeof v === 'number') {
+      return alternativasPorPergunta[i][v - 1] || '—';
+    } else if (typeof v === 'string') {
+      return v;
+    }
     return '—';
-  }
-});
-
-  
+  });
 
   const isChecked = item.checked === true;
 
-  
-res.send(`
+  // envia a página completa
+  res.send(`
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -333,17 +331,13 @@ res.send(`
 
   <style>
     body, html { margin:0; height:100%; font-family:sans-serif; position:relative; }
-    .back-btn {
-      top:1rem; left:1rem; background:#6c757d; color:#fff;
-      border:none; padding:.5rem 1rem; border-radius:4px;
-      cursor:pointer; font-size:1rem;
-    }
+    .back-btn { position:absolute; top:1rem; left:1rem; background:#6c757d; color:#fff;
+      border:none; padding:.5rem 1rem; border-radius:4px; cursor:pointer; font-size:1rem; }
     .attended { position:absolute; top:1rem; right:1rem; font-size:1rem; }
     .container { display:flex; height:100%; }
     .left {
-      width:30%; min-width:280px; padding:1rem;
-      overflow-y:auto; background:#f7f7f7;
-      font-size:.9rem; position:relative;
+      width:30%; min-width:280px; padding:1rem; overflow-y:auto;
+      background:#f7f7f7; font-size:.9rem; position:relative;
     }
     .right {
       flex:1; display:flex; flex-direction:column;
@@ -353,10 +347,8 @@ res.send(`
     #chart-wrapper { width:600px; height:600px; }
     #myChart { width:100%; height:100%; }
     .buttons { margin-top:1rem; }
-    .buttons button {
-      margin-right:.5rem; padding:.5rem 1rem;
-      font-size:1rem; cursor:pointer;
-    }
+    .buttons button { margin-right:.5rem; padding:.5rem 1rem; font-size:1rem; cursor:pointer; }
+
     /* Modal */
     #replyModal {
       display:none; position:fixed; top:0; left:0;
@@ -376,15 +368,16 @@ res.send(`
 <body>
 
   <div class="attended">
-    <label>
-      <input type="checkbox" id="attendedCheckbox" ${isChecked ? 'checked' : ''}>
+    <label for="attendedCheckbox">
+      <input type="checkbox" id="attendedCheckbox" ${isChecked ? 'checked' : ''}/>
       Cliente atendido
     </label>
   </div>
 
+  <button class="back-btn" onclick="location.href='/admin'">← Voltar</button>
+
   <div class="container">
     <div class="left">
-      <button class="back-btn" onclick="window.location.href = window.location.origin + '/admin'">← Voltar</button>
       <h3>Seus Dados</h3>
       <p>
         <strong>Nome:</strong> ${item.nome}<br/>
@@ -407,12 +400,10 @@ res.send(`
     </div>
 
     <div class="right">
-      <div id="chart-wrapper">
-        <canvas id="myChart"></canvas>
-      </div>
+      <div id="chart-wrapper"><canvas id="myChart"></canvas></div>
       <div class="buttons">
-        <button id="downloadJpg">Baixar JPG com dados</button>
-        <button id="downloadPdf">Baixar PDF com dados</button>
+        <button id="downloadJpg">Baixar JPG</button>
+        <button id="downloadPdf">Baixar PDF</button>
         <button id="btnReply">Enviar Resposta</button>
       </div>
     </div>
@@ -426,17 +417,7 @@ res.send(`
       </p>
       <div id="editor"></div>
       <div id="replySpinner">
-        <svg width="38" height="38" viewBox="0 0 38 38" stroke="#555">
-          <g fill="none" fill-rule="evenodd">
-            <g transform="translate(1 1)" stroke-width="2">
-              <circle stroke-opacity=".3" cx="18" cy="18" r="18"/>
-              <path d="M36 18c0-9.94-8.06-18-18-18">
-                <animateTransform attributeName="transform" type="rotate"
-                  from="0 18 18" to="360 18 18" dur="1s" repeatCount="indefinite"/>
-              </path>
-            </g>
-          </g>
-        </svg>
+        <svg width="38" height="38" viewBox="0 0 38 38" stroke="#555">…spinner…</svg>
         <div>Enviando…</div>
       </div>
       <div class="actions">
@@ -447,13 +428,16 @@ res.send(`
   </div>
 
   <script>
-    // dados do usuário e das respostas para exportar e tooltips
-    const userName       = ${JSON.stringify(item.nome)};
-    const userEmail      = ${JSON.stringify(item.email)};
-    const userPhone      = ${JSON.stringify(item.telefone)};
-    const respostasTextoJS = ${JSON.stringify(respostasTexto)};
+    // dados para o gráfico e tooltips
+    const respostasTextoJS    = ${JSON.stringify(respostasTexto)};
+    const respostasMercadoAll = ${JSON.stringify(respostasMercado)};
+    const alternativas        = ${JSON.stringify(alternativasPorPergunta)};
+    const rawLabels           = ${JSON.stringify(perguntas)};
+    const responses           = ${JSON.stringify(item.respostas)};
+    const mediaData           = ${JSON.stringify(media.map(v => +v.toFixed(1)))};
+    const ideal               = Array(rawLabels.length).fill(5);
 
-    // plugin para fundo branco no Chart.js
+    // plugin para fundo branco
     const bgWhite = {
       id: 'bg_white',
       beforeDraw(chart) {
@@ -466,7 +450,7 @@ res.send(`
       }
     };
 
-    // quebra de linha em labels longas
+    // quebra de linha nos labels
     function wrapLabel(text, maxLen) {
       const words = text.split(' '), lines = [''];
       words.forEach(w => {
@@ -476,16 +460,11 @@ res.send(`
       });
       return lines;
     }
+    const labels = rawLabels.map(l => wrapLabel(l, 25));
 
-    const rawLabels = ${JSON.stringify(perguntas)};
-    const responses = ${JSON.stringify(item.respostas)};
-    const mediaData  = ${JSON.stringify(media.map(v => +v.toFixed(1)))};
-    const labels     = rawLabels.map(l => wrapLabel(l, 25));
-    const ideal      = Array(labels.length).fill(5);
-
-    // configura o radar chart com tooltip mostrando a resposta
-    const ctxChart = document.getElementById('myChart').getContext('2d');
-    new Chart(ctxChart, {
+    // inicializa o Chart.js
+    const ctx = document.getElementById('myChart').getContext('2d');
+    new Chart(ctx, {
       type: 'radar',
       data: {
         labels,
@@ -523,10 +502,9 @@ res.send(`
         maintainAspectRatio: false,
         scales: {
           r: {
-            min: 1,
-            max: 5,
-            ticks: { stepSize: 1, font: { size: 14 } },
-            pointLabels: { font: { size: 12 }, padding: 10 }
+            min: 1, max: 5,
+            ticks: { stepSize: 1 },
+            pointLabels: { font: { size: 12 } }
           }
         },
         plugins: {
@@ -534,174 +512,115 @@ res.send(`
           tooltip: {
             callbacks: {
               title: function(context) {
-                return respostasTextoJS[context[0].dataIndex];
+                const idx     = context[0].dataIndex;
+                const dsLabel = context[0].dataset.label;
+
+                if (dsLabel === 'Meus Dados') {
+                  return respostasTextoJS[idx];
+
+                } else if (dsLabel === 'Média Mercado') {
+                  // EXIBE A ALTERNATIVA CORRESPONDENTE AO VALOR MÉDIO
+                  const avg     = mediaData[idx];
+                  const roundV  = Math.round(avg);
+                  return alternativas[idx][roundV - 1] || '—';
+
+                } else if (dsLabel === 'Ideal (5)') {
+                  // EXIBE A ALTERNATIVA IDEAL (5ª)
+                  const idealV = ideal[idx];
+                  return alternativas[idx][idealV - 1] || '—';
+                }
+
+                return dsLabel + ': ' + context[0].formattedValue;
               },
               label: function(context) {
                 return context.dataset.label + ': ' + context.formattedValue;
               }
             }
-          },
-          legend: { position: 'top', labels: { font: { size: 14 } } },
-          title: { display: true, text: 'Diagnóstico Solo Mercado Imobiliário', font: { size: 18 } }
+          }
         }
       },
       plugins: [ bgWhite ]
     });
 
-    const canvas = document.getElementById('myChart');
-
-    // download JPG com os dados alinhados à direita
+    // download JPG
     document.getElementById('downloadJpg').onclick = () => {
-      const headerHeight = 80;
-      const tmpCanvas = document.createElement('canvas');
-      tmpCanvas.width  = canvas.width;
-      tmpCanvas.height = canvas.height + headerHeight;
-      const ctx2 = tmpCanvas.getContext('2d');
-
-      // fundo branco
-      ctx2.fillStyle = '#fff';
-      ctx2.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
-
-      // margem direita
-      const margin = 20;
-      const textX = tmpCanvas.width - margin;
-      ctx2.textAlign = 'right';
-      ctx2.fillStyle = '#000';
-      ctx2.font = 'bold 14px sans-serif';
-      ctx2.fillText(\`Nome: \${userName}\`,   textX, 20);
-      ctx2.fillText(\`E-mail: \${userEmail}\`, textX, 40);
-      ctx2.fillText(\`Telefone: \${userPhone}\`, textX, 60);
-
-      // insere o gráfico
+      const header = 80;
+      const tmp   = document.createElement('canvas');
+      tmp.width  = ctx.canvas.width;
+      tmp.height = ctx.canvas.height + header;
+      const c2 = tmp.getContext('2d');
+      c2.fillStyle = '#fff';
+      c2.fillRect(0,0,tmp.width,tmp.height);
+      c2.textAlign = 'right';
+      c2.font = 'bold 14px sans-serif';
+      c2.fillStyle = '#000';
+      c2.fillText(\`Nome: ${item.nome}\`, tmp.width-20, 20);
+      c2.fillText(\`E-mail: ${item.email}\`, tmp.width-20, 40);
+      c2.fillText(\`Telefone: ${item.telefone}\`, tmp.width-20, 60);
       const img = new Image();
       img.onload = () => {
-        ctx2.drawImage(img, 0, headerHeight, canvas.width, canvas.height);
+        c2.drawImage(img,0,header,ctx.canvas.width,ctx.canvas.height);
         const a = document.createElement('a');
-        a.href = tmpCanvas.toDataURL('image/jpeg', 1.0);
-        a.download = 'Diagnostico_Solo_Mercado_Imobiliario_${item.nome}.jpg';
+        a.href = tmp.toDataURL('image/jpeg');
+        a.download = 'Resultado_${item.nome}.jpg';
         a.click();
       };
-      img.src = canvas.toDataURL('image/png');
+      img.src = ctx.canvas.toDataURL('image/png');
     };
 
-    // download PDF com os dados alinhados à direita
+    // download PDF
     document.getElementById('downloadPdf').onclick = () => {
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'px',
-        format: [canvas.width, canvas.height + 80]
+        orientation:'landscape', unit:'px',
+        format:[ctx.canvas.width, ctx.canvas.height+80]
       });
-
-      const margin = 20;
-      const textX = canvas.width - margin;
       pdf.setFontSize(12);
-      pdf.text(\`Nome: \${userName}\`,    textX, 20, { align: 'right' });
-      pdf.text(\`E-mail: \${userEmail}\`, textX, 35, { align: 'right' });
-      pdf.text(\`Telefone: \${userPhone}\`, textX, 50, { align: 'right' });
-
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 80, canvas.width, canvas.height);
-      pdf.save('Diagnostico_Solo_Mercado_Imobiliario_${item.nome}.pdf');
+      pdf.text(\`Nome: ${item.nome}\`, ctx.canvas.width-20, 20, { align:'right' });
+      pdf.text(\`E-mail: ${item.email}\`, ctx.canvas.width-20, 35, { align:'right' });
+      pdf.text(\`Telefone: ${item.telefone}\`, ctx.canvas.width-20, 50, { align:'right' });
+      pdf.addImage(ctx.canvas.toDataURL('image/png'),'PNG',0,80,ctx.canvas.width,ctx.canvas.height);
+      pdf.save('Resultado_${item.nome}.pdf');
     };
 
-
-  <!-- Checkbox -->
-    document.getElementById('attendedCheckbox')
-      .addEventListener('change', function() {
-        fetch('/result/${id}/check', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ checked: this.checked })
-        })
-        .then(r => r.json())
-        .then(json => {
-          if (!json.success) {
-            alert('Erro ao atualizar status.');
-            this.checked = !this.checked;
-          }
-        })
-        .catch(() => {
-          alert('Falha de comunicação.');
-          this.checked = !this.checked;
-        });
+    // toggle attended
+    document.getElementById('attendedCheckbox').addEventListener('change', function(){
+      fetch(\`/result/${id}/check\`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ checked:this.checked })
       });
-
-
-
-
-<!-- Listener do botão "Enviar Resposta" e controle do modal -->
-    const quill = new Quill('#editor', { theme: 'snow' });
-    document.getElementById('btnReply').addEventListener('click', () => {
-      document.getElementById('replyModal').style.display = 'flex';
     });
-    document.getElementById('cancelReply').addEventListener('click', () => {
-      document.getElementById('replyModal').style.display = 'none';
-    });
-    document.getElementById('sendReply').addEventListener('click', () => {
+
+    // Quill modal
+    const quill = new Quill('#editor',{ theme:'snow' });
+    document.getElementById('btnReply').onclick    = () => document.getElementById('replyModal').style.display='flex';
+    document.getElementById('cancelReply').onclick = () => document.getElementById('replyModal').style.display='none';
+    document.getElementById('sendReply').onclick   = () => {
       const spinner = document.getElementById('replySpinner');
       spinner.style.display = 'block';
-
-      const replyHtml = quill.root.innerHTML;
-      const jpgData   = document.getElementById('myChart')
-                            .toDataURL('image/jpeg', 1.0);
-      const { jsPDF } = window.jspdf;
-      const pdfDoc = new jsPDF({
-        orientation: 'landscape',
-        unit: 'px',
-        format: [document.getElementById('myChart').width,
-                 document.getElementById('myChart').height + 80]
-      });
-      pdfDoc.addImage(
-        document.getElementById('myChart').toDataURL('image/png'),
-        'PNG', 0, 80,
-        document.getElementById('myChart').width,
-        document.getElementById('myChart').height
-      );
-      const pdfData = pdfDoc.output('datauristring');
-
-      fetch('/reply/${id}', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reply: replyHtml,
-          jpg: jpgData,
-          pdf: pdfData
-        })
+      const html   = quill.root.innerHTML;
+      const jpg    = ctx.canvas.toDataURL('image/jpeg');
+      const pdfDoc = new jsPDF({orientation:'landscape',unit:'px',format:[ctx.canvas.width,ctx.canvas.height+80]});
+      pdfDoc.addImage(ctx.canvas.toDataURL('image/png'),'PNG',0,80,ctx.canvas.width,ctx.canvas.height);
+      const pdf    = pdfDoc.output('datauristring');
+      fetch(\`/reply/${id}\`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ reply:html, jpg, pdf })
       })
-      .then(r => r.json())
-      .then(json => {
-        spinner.style.display = 'none';
-        if (json.success) {
-          alert('Resposta enviada com sucesso!');
-          document.getElementById('replyModal').style.display = 'none';
-        } else {
-          alert('Erro ao enviar resposta.');
-        }
-      })
-      .catch(() => {
-        spinner.style.display = 'none';
-        alert('Erro de comunicação.');
+      .then(()=> {
+        spinner.style.display='none';
+        document.getElementById('replyModal').style.display='none';
+        alert('Enviado com sucesso!');
       });
-    });
-
-      
+    };
   </script>
-
-
-
 </body>
 </html>
-`);
-
-
-
-
-
-
-
-
-
+  `);
 });
+
 
 // POST /result/:id/check
 app.post('/result/:id/check', checkAuth, (req, res) => {
