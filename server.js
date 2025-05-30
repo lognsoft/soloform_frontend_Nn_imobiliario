@@ -330,51 +330,93 @@ app.get('/result/:id', checkAuth, (req, res) => {
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
   <style>
-    body, html { margin:0; height:100%; font-family:sans-serif; position:relative; }
-    .back-btn { position:absolute; top:1rem; left:1rem; background:#6c757d; color:#fff;
-      border:none; padding:.5rem 1rem; border-radius:4px; cursor:pointer; font-size:1rem; }
-    .attended { position:absolute; top:1rem; right:1rem; font-size:1rem; }
-    .container { display:flex; height:100%; }
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: sans-serif;
+      position: relative;
+    }
+    /* botão voltar fixo */
+    .back-btn {
+      position: absolute;
+      top: 0.5rem;
+      left: 1rem;
+      background: #6c757d;
+      color: #fff;
+      border: none;
+      padding: .5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      z-index: 10;
+    }
+    /* desloca todo o conteúdo abaixo do botão */
+    .container {
+      position: absolute;
+      top: 3rem;    /* altura do botão + espaçamento */
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+    }
+    .attended { position: absolute; top: .5rem; right: 1rem; font-size: 1rem; }
     .left {
-      width:30%; min-width:280px; padding:1rem; overflow-y:auto;
-      background:#f7f7f7; font-size:.9rem; position:relative;
+      width: 30%; min-width: 280px;
+      padding: 1rem; overflow-y: auto;
+      background: #f7f7f7; font-size: .9rem;
+      position: relative;
     }
     .right {
-      flex:1; display:flex; flex-direction:column;
-      align-items:center; justify-content:center;
-      padding:1rem; background:#fff;
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 1rem; background: #fff;
     }
-    #chart-wrapper { width:600px; height:600px; }
-    #myChart { width:100%; height:100%; }
-    .buttons { margin-top:1rem; }
-    .buttons button { margin-right:.5rem; padding:.5rem 1rem; font-size:1rem; cursor:pointer; }
-
+    #chart-wrapper { width: 600px; height: 600px; }
+    #myChart { width: 100%; height: 100%; }
+    .buttons { margin-top: 1rem; }
+    .buttons button {
+      margin-right: .5rem;
+      padding: .5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+    }
     /* Modal */
     #replyModal {
-      display:none; position:fixed; top:0; left:0;
-      width:100%; height:100%; background:rgba(0,0,0,0.5);
-      align-items:center; justify-content:center;
+      display: none;
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      align-items: center; justify-content: center;
     }
     #replyModal .modal-content {
-      background:#fff; padding:1rem; border-radius:4px;
-      width:90%; max-width:500px;
+      background: #fff; padding: 1rem; border-radius: 4px;
+      width: 90%; max-width: 500px;
     }
-    #editor { height:200px; background:#fff; }
-    .modal-content .actions { text-align:right; margin-top:1rem; }
-    .modal-content .actions button { margin-left:.5rem; }
-    #replySpinner { display:none; text-align:center; margin-top:1rem; }
+    #editor { height: 200px; background: #fff; }
+    .modal-content .actions {
+      text-align: right; margin-top: 1rem;
+    }
+    .modal-content .actions button {
+      margin-left: .5rem;
+    }
+    #replySpinner {
+      display: none; text-align: center; margin-top: 1rem;
+    }
   </style>
 </head>
 <body>
 
+  <!-- Botão Voltar -->
+  <button class="back-btn" onclick="window.history.back()">← Voltar</button>
+
+  <!-- Checkbox "Cliente atendido" -->
   <div class="attended">
-    <label for="attendedCheckbox">
+    <label>
       <input type="checkbox" id="attendedCheckbox" ${isChecked ? 'checked' : ''}/>
       Cliente atendido
     </label>
   </div>
-
-  <button class="back-btn" onclick="location.href='/admin'">← Voltar</button>
 
   <div class="container">
     <div class="left">
@@ -417,7 +459,7 @@ app.get('/result/:id', checkAuth, (req, res) => {
       </p>
       <div id="editor"></div>
       <div id="replySpinner">
-        <svg width="38" height="38" viewBox="0 0 38 38" stroke="#555">…spinner…</svg>
+        <svg width="38" height="38" viewBox="0 0 38 38" stroke="#555">…</svg>
         <div>Enviando…</div>
       </div>
       <div class="actions">
